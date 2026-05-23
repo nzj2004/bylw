@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+target/
+
+# Runtime logs
+*.log
+*.err
+*.err.log
+
+# Local IDE/runtime noise
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db

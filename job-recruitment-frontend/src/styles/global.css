@@ -1,0 +1,43 @@
+/* 全局样式 - 修复Element Plus子菜单下拉背景色 */
+
+/* 子菜单下拉面板 - 深蓝色背景 */
+.el-menu--popup {
+  background-color: #1a237e !important;
+  border: none !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 子菜单项 - 白色文字 */
+.el-menu--popup .el-menu-item {
+  background-color: #1a237e !important;
+  color: #ffffff !important;
+  height: 40px !important;
+  line-height: 40px !important;
+}
+
+/* 子菜单项hover - 浅蓝色背景 + 黄色文字 */
+.el-menu--popup .el-menu-item:hover {
+  background-color: #3949ab !important;
+  color: #ffd04b !important;
+}
+
+/* 激活状态的子菜单项 */
+.el-menu--popup .el-menu-item.is-active {
+  background-color: #3949ab !important;
+  color: #ffd04b !important;
+}
+
+/* 水平菜单下的子菜单特殊处理 */
+.el-menu--horizontal .el-menu--popup {
+  background-color: #1a237e !important;
+}
+
+.el-menu--horizontal .el-menu--popup .el-menu-item {
+  background-color: #1a237e !important;
+  color: #ffffff !important;
+}
+
+.el-menu--horizontal .el-menu--popup .el-menu-item:hover {
+  background-color: #3949ab !important;
+  color: #ffd04b !important;
+}
