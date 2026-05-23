@@ -120,8 +120,7 @@ const checkApplyStatusForJob = async () => {
 const handleFavorite = async () => {
   if (!userStore.isLoggedIn) {
     ElMessage.warning('请先登录')
-    // 触发登录弹窗事件
-    window.dispatchEvent(new CustomEvent('show-login-dialog'))
+    router.push({ path: '/login', query: { redirect: route.fullPath } })
     return
   }
   if (!userStore.isUser) {
@@ -150,8 +149,7 @@ const handleFavorite = async () => {
 const handleApply = async () => {
   if (!userStore.isLoggedIn) {
     ElMessage.warning('请先登录')
-    // 触发登录弹窗事件
-    window.dispatchEvent(new CustomEvent('show-login-dialog'))
+    router.push({ path: '/login', query: { redirect: route.fullPath } })
     return
   }
   if (!userStore.isUser) {

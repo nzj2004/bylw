@@ -45,12 +45,13 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { listFavorites, removeFavorite } from '../../api/favorite'
 import { useUserStore } from '../../store/user'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const favoriteList = ref([])
 const pagination = reactive({
@@ -63,7 +64,7 @@ const fetchFavorites = async () => {
   // 检查是否登录
   if (!userStore.isLoggedIn) {
     ElMessage.warning('请先登录')
-    window.dispatchEvent(new CustomEvent('show-login-dialog'))
+    router.push({ path: '/login', query: { redirect: route.fullPath } })
     return
   }
   

@@ -18,6 +18,14 @@ const isPermissionMessage = (message) => {
   return permissionPatterns.some((item) => text.includes(item.toLowerCase()))
 }
 
+const goToLoginPage = () => {
+  const current = `${window.location.pathname}${window.location.search}`
+  const query = window.location.pathname !== '/login'
+    ? `?redirect=${encodeURIComponent(current)}`
+    : ''
+  window.location.assign(`/login${query}`)
+}
+
 const request = axios.create({
   baseURL: '/api',
   timeout: 10000
@@ -49,7 +57,7 @@ request.interceptors.response.use(
         userStore.logout()
         ElMessage.error('请先登录后再操作')
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('show-login-dialog'))
+          goToLoginPage()
         }, 500)
       } else if (res.code !== 403 && !isPermissionMessage(res.message)) {
         ElMessage.error(res.message || '请求失败')
@@ -67,7 +75,7 @@ request.interceptors.response.use(
         userStore.logout()
         ElMessage.error('请先登录后再操作')
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('show-login-dialog'))
+          goToLoginPage()
         }, 500)
       } else if (status !== 403) {
         ElMessage.error(error.message || '网络错误')

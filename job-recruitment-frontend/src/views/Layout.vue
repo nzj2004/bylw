@@ -66,7 +66,7 @@
           </el-dropdown>
         </template>
         <template v-else>
-          <el-button type="primary" size="small" @click="showLoginDialog">登录</el-button>
+          <el-button type="primary" size="small" @click="goToLogin">登录</el-button>
         </template>
       </div>
     </el-header>
@@ -82,25 +82,20 @@
     <el-footer class="footer">
       <p>毕业生招聘信息发布与管理系统 © 2026</p>
     </el-footer>
-    
-    <!-- 登录弹窗 -->
-    <LoginDialog ref="loginDialogRef" />
   </el-container>
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { OfficeBuilding, ArrowDown } from '@element-plus/icons-vue'
 import { useUserStore } from '../store/user'
 import { getUnreadNotificationCount } from '../api/user'
-import LoginDialog from '../components/LoginDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const loginDialogRef = ref(null)
 const unreadCount = ref(0)
 
 const activeMenu = computed(() => route.path)
@@ -120,11 +115,11 @@ const cachedViews = ref([
   'CompanyApplicationProcess'
 ])
 
-// 显示登录弹窗
-const showLoginDialog = () => {
-  if (loginDialogRef.value) {
-    loginDialogRef.value.show()
-  }
+const goToLogin = () => {
+  const query = route.fullPath && route.fullPath !== '/home'
+    ? { redirect: route.fullPath }
+    : {}
+  router.push({ path: '/login', query })
 }
 
 const fetchUnreadCount = async () => {
@@ -144,16 +139,15 @@ const fetchUnreadCount = async () => {
 const checkAuth = () => {
   // 如果未登录且访问了需要登录的页面
   if (!userStore.isLoggedIn) {
-    const requiresAuth = route.meta.requireUser || 
-                        route.meta.requireAdmin || 
-                        route.meta.requireOperator || 
+    const requiresAuth = route.meta.requireAuth ||
+                        route.meta.requireUser ||
+                        route.meta.requireAdmin ||
+                        route.meta.requireOperator ||
                         route.meta.requireCompany
     
     if (requiresAuth) {
       ElMessage.warning('请先登录后再访问')
-      setTimeout(() => {
-        showLoginDialog()
-      }, 500)
+      router.replace({ path: '/login', query: { redirect: route.fullPath } })
     }
   }
 }
@@ -162,9 +156,6 @@ const checkAuth = () => {
 onMounted(() => {
   checkAuth()
   fetchUnreadCount()
-  
-  // 监听全局登录弹窗事件
-  window.addEventListener('show-login-dialog', showLoginDialog)
 })
 
 // 监听路由变化
@@ -175,11 +166,6 @@ watch(() => route.path, () => {
 
 watch(() => userStore.isLoggedIn, () => {
   fetchUnreadCount()
-})
-
-// 组件卸载时移除事件监听
-onBeforeUnmount(() => {
-  window.removeEventListener('show-login-dialog', showLoginDialog)
 })
 
 const handleCommand = (command) => {

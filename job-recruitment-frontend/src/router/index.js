@@ -4,6 +4,12 @@ import { useUserStore } from '../store/user'
 
 const routes = [
   {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/Login.vue'),
+    meta: { public: true }
+  },
+  {
     path: '/register',
     name: 'Register',
     component: () => import('../views/Register.vue'),
@@ -142,10 +148,6 @@ const router = createRouter({
   routes
 })
 
-const showLoginDialog = () => {
-  window.dispatchEvent(new CustomEvent('show-login-dialog'))
-}
-
 router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore()
 
@@ -163,8 +165,7 @@ router.beforeEach(async (to, from, next) => {
 
   if (needsAuth && !userStore.isLoggedIn) {
     ElMessage.error('请先登录后访问该页面')
-    showLoginDialog()
-    next('/')
+    next({ path: '/login', query: { redirect: to.fullPath } })
     return
   }
 
@@ -173,8 +174,7 @@ router.beforeEach(async (to, from, next) => {
     if (!info) {
       userStore.logout()
       ElMessage.error('登录已失效，请重新登录')
-      showLoginDialog()
-      next('/')
+      next({ path: '/login', query: { redirect: to.fullPath } })
       return
     }
   }
