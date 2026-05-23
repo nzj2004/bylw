@@ -231,10 +231,12 @@ Offer状态：
 
 - `insert_test_data.sql` 已改为按用户名和企业资料动态获取 ID，不再依赖固定自增值；但它是重置型演示数据脚本，会清理并重建演示业务数据，执行前应确认不需要保留当前演示数据。
 - `repair_seed_chinese_data.sql` 是非破坏性修复脚本，只修复已知演示账号/业务样例的中文文案、薪资单位、状态历史和通知数据，不清理其他已有数据。
+- `expand_dashboard_demo_data.sql` 是非破坏性扩展脚本，用于把首页指标补到 1200+ 职位、580+ 企业、8600+ 用户、3200+ 投递，同时覆盖面试确认、面试改期、面试通过/未通过、Offer响应、Offer过期和入职确认流程。
 - 新增求职者测试账号：`zhouhao / admin123`，真实姓名“周昊”。
 - 周昊账号包含待查看、面试中、面试通过、Offer待确认、Offer已接受、Offer已过期等投递样例，便于验证投递记录、Offer页面和状态时间线。
 - 脚本会创建并填充 `interview_rounds`、`offers`、`application_status_history`、`user_notification`，并回写职位投递数。
 - 当前数据库已验证：周昊通知 4 条、未读 3 条、状态历史 16 条、Offer 3 条，职位与Offer薪资均按 K 单位存储。
+- 扩展数据已验证：管理员 1 位、运营 3 位、企业 580 家、求职者 8016 位、总用户 8600 位、职位 1200 个、投递 3200 条；企业 Logo 统一使用 `/uploads/images/company-logos/*.svg` 本地文字图。
 
 ### 6.4 文档与编码
 
