@@ -462,7 +462,7 @@ public Result<Boolean> deleteUser(@PathVariable Long id)
 
 | 功能模块 | 操作权限 | 说明 |
 |---------|---------|------|
-| **企业审核** | ✅ 查看待审核企业<br/>✅ 通过企业审核<br/>✅ 拒绝企业审核<br/>✅ 填写拒绝原因 | 确保企业信息真实有效 |
+| **企业审核** | ✅ 查看待审核企业<br/>✅ 查看资料变更<br/>✅ 通过企业审核<br/>✅ 拒绝企业审核<br/>✅ 填写拒绝原因 | 确保企业信息真实有效，资料变更审核通过后才生效 |
 | **职位审核** | ✅ 查看待审核职位<br/>✅ 通过职位审核<br/>✅ 拒绝职位审核<br/>✅ 填写拒绝原因 | 确保职位信息合规 |
 | **企业信息查看** | ✅ 查看企业详情<br/>✅ 查看审核历史 | 了解企业信息 |
 | **职位信息查看** | ✅ 查看职位详情<br/>✅ 查看审核历史 | 了解职位信息 |
@@ -473,7 +473,9 @@ public Result<Boolean> deleteUser(@PathVariable Long id)
 
 **审核流程：**
 ```
-企业/发布职位 → 待审核状态 → 运营审核 → 通过/拒绝
+企业首次提交资料 → 待审核状态 → 运营审核 → 通过/拒绝
+已通过企业修改资料 → pending_*待审核字段 → 提交审核并自动下架岗位 → 运营审核 → 通过后覆盖正式资料/拒绝后保持原资料
+企业发布职位 → 待审核状态 → 运营审核 → 通过/拒绝
                                 ↓
                           填写拒绝原因（如拒绝）
                                 ↓
@@ -496,7 +498,7 @@ public Result<Boolean> auditJob(@PathVariable Long id)
 
 | 功能模块 | 操作权限 | 说明 |
 |---------|---------|------|
-| **企业信息** | ✅ 完善企业信息<br/>✅ 修改企业资料<br/>✅ 上传企业Logo<br/>✅ 查看审核状态 | 需要运营审核通过后才能发布职位 |
+| **企业信息** | ✅ 完善企业信息<br/>✅ 修改企业资料<br/>✅ 上传企业Logo<br/>✅ 保存待审核修改<br/>✅ 提交审核<br/>✅ 查看审核状态 | 需要运营审核通过后才能发布职位；资料变更审核通过后才覆盖正式资料 |
 | **职位管理** | ✅ 发布新职位<br/>✅ 编辑职位<br/>✅ 删除职位<br/>✅ 查看职位状态<br/>✅ 查看浏览/投递数 | 职位需要运营审核通过后展示 |
 | **简历管理** | ✅ 查看投递记录<br/>✅ 查看求职者简历<br/>✅ 标记感兴趣<br/>✅ 标记不合适<br/>✅ 添加备注 | 管理收到的简历 |
 | **职位搜索** | ✅ 浏览职位（自己的）<br/>✅ 筛选职位<br/>✅ 查看统计数据 | 查看自己发布的职位 |
@@ -511,9 +513,10 @@ public Result<Boolean> auditJob(@PathVariable Long id)
 1. 注册企业账号
 2. 完善企业信息 → 提交审核
 3. 运营审核通过
-4. 发布职位 → 提交审核
-5. 运营审核通过 → 职位展示
-6. 接收投递 → 筛选简历
+4. 后续修改企业资料 → 保存待审核修改 → 提交审核并自动下架岗位 → 运营通过后更新正式资料
+5. 发布职位 → 提交审核
+6. 运营审核通过 → 职位展示
+7. 接收投递 → 筛选简历
 ```
 
 **后端接口权限：**
@@ -834,7 +837,9 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
 ### 3. 运营功能
 - **企业信息审核**
   - 查看待审核企业列表
+  - 查看企业待审核资料变更标识
   - 审核通过/拒绝企业
+  - 企业审核未通过或重新提交审核时，对应企业岗位保持下架
   - 查看审核历史
   
 - **职位审核**
@@ -853,6 +858,9 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
 - **企业信息管理**
   - 编辑企业信息
   - 上传企业Logo
+  - 保存待审核修改
+  - 提交资料审核
+  - 审核期间岗位自动下架
   - 查看审核状态
   - 修改联系人信息
   
@@ -964,11 +972,23 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
 | contact_email | VARCHAR(100) | 联系人邮箱 |
 | status | TINYINT | 审核状态：0-待审核 1-已通过 2-已拒绝 |
 | reject_reason | VARCHAR(500) | 拒绝原因 |
+| pending_company_name | VARCHAR(100) | 待审核企业名称 |
+| pending_industry | VARCHAR(50) | 待审核所属行业 |
+| pending_scale | VARCHAR(50) | 待审核企业规模 |
+| pending_address | VARCHAR(200) | 待审核企业地址 |
+| pending_description | TEXT | 待审核企业简介 |
+| pending_logo_url | VARCHAR(200) | 待审核Logo地址 |
+| pending_website | VARCHAR(100) | 待审核企业官网 |
+| pending_contact_name | VARCHAR(50) | 待审核联系人 |
+| pending_contact_phone | VARCHAR(20) | 待审核联系电话 |
+| pending_contact_email | VARCHAR(100) | 待审核联系邮箱 |
 | create_time | DATETIME | 创建时间 |
 | update_time | DATETIME | 更新时间 |
 | deleted | TINYINT | 逻辑删除 |
 
 **索引：** idx_user_id, idx_status
+
+企业资料重审规则：已通过企业修改资料时先写入 `pending_*` 字段，点击“提交审核”后企业状态变为待审核，并将该企业岗位下架；运营审核通过后 `pending_*` 覆盖正式字段并清空，审核拒绝则保留拒绝原因且岗位保持下架。
 
 ### 3. job_info（招聘信息表）
 
