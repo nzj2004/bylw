@@ -136,6 +136,22 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements JobSe
     }
 
     @Override
+    public Result<PageResult<JobDTO>> listHotJobs(Long current, Long size) {
+        LambdaQueryWrapper<Job> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Job::getStatus, Job.STATUS_PUBLISHED);
+        wrapper.orderByDesc(Job::getApplyCount, Job::getViewCount, Job::getPublishTime, Job::getCreateTime);
+
+        Page<Job> page = new Page<>(current, size);
+        baseMapper.selectPage(page, wrapper);
+
+        List<JobDTO> records = page.getRecords().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+
+        return Result.success(PageResult.of(page.getTotal(), current, size, records));
+    }
+
+    @Override
     public Result<PageResult<JobDTO>> listCompanyJobs(Long companyId, String keyword, String category, Integer status, Long current, Long size) {
         LambdaQueryWrapper<Job> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Job::getCompanyId, companyId);

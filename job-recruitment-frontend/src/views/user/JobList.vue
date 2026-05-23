@@ -97,7 +97,7 @@
           </div>
           <div class="company-info">
             <div class="company-name">
-              <el-avatar :size="40" :src="job.companyLogo" />
+              <el-avatar :size="40" :src="getImageUrl(job.companyLogo)" />
               <span>{{ job.companyName }}</span>
             </div>
             <div class="job-meta">
@@ -130,6 +130,7 @@ import { ref, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Search } from '@element-plus/icons-vue'
 import { listJobs } from '../../api/job'
+import { getImageUrl } from '../../utils/image'
 import { JOB_CATEGORY_OPTIONS, resolveCategoryFilterValue } from '../../constants/jobCategoryOptions'
 
 const route = useRoute()

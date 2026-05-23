@@ -20,6 +20,10 @@ export const listJobs = (params) => {
   return request.get('/job/list', { params })
 }
 
+export const listHotJobs = (params) => {
+  return request.get('/job/hot', { params })
+}
+
 export const listCompanyJobs = (companyId, params) => {
   return request.get(`/job/company/${companyId}`, { params })
 }

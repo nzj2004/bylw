@@ -110,7 +110,7 @@
               <el-tag size="small" type="success">{{ job.education }}</el-tag>
             </div>
             <div class="job-company">
-              <el-avatar :size="32" :src="job.companyLogo || '/default-company.png'" />
+              <el-avatar :size="32" :src="getImageUrl(job.companyLogo)" />
               <span>{{ job.companyName }}</span>
             </div>
           </el-card>
@@ -124,7 +124,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Briefcase, OfficeBuilding, User, DocumentChecked, Clock, Close } from '@element-plus/icons-vue'
-import { listJobs } from '../../api/job'
+import { listHotJobs } from '../../api/job'
+import { getImageUrl } from '../../utils/image'
 
 const router = useRouter()
 const searchInputRef = ref(null)
@@ -226,7 +227,7 @@ const hotJobs = ref([])
 
 const fetchHotJobs = async () => {
   try {
-    const res = await listJobs({ current: 1, size: 6 })
+    const res = await listHotJobs({ current: 1, size: 6 })
     hotJobs.value = res.data.records
   } catch (error) {
     console.error(error)

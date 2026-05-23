@@ -90,6 +90,13 @@ public class JobController {
         return jobService.listJobs(keyword, category, city, experience, education, minSalary, maxSalary, status, current, size);
     }
 
+    @GetMapping("/hot")
+    public Result<PageResult<JobDTO>> listHotJobs(
+            @RequestParam(defaultValue = "1") Long current,
+            @RequestParam(defaultValue = "6") Long size) {
+        return jobService.listHotJobs(current, size);
+    }
+
     @GetMapping("/company/{companyId}")
     @PreAuthorize("hasAnyRole('COMPANY', 'ADMIN')")
     public Result<PageResult<JobDTO>> listCompanyJobs(

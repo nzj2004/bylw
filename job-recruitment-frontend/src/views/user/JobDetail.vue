@@ -39,7 +39,7 @@
       
       <div class="company-section">
         <div class="company-info">
-          <el-avatar :size="64" :src="job.companyLogo" />
+          <el-avatar :size="64" :src="getImageUrl(job.companyLogo)" />
           <div class="company-detail">
             <h3>{{ job.companyName }}</h3>
             <p>浏览 {{ job.viewCount }} · 投递 {{ job.applyCount }}</p>
@@ -71,6 +71,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Star } from '@element-plus/icons-vue'
 import { getJobById } from '../../api/job'
+import { getImageUrl } from '../../utils/image'
 import { applyJob, checkApplyStatus } from '../../api/user'
 import { addFavorite, removeFavorite, isFavorite as checkFavorite } from '../../api/favorite'
 import { useUserStore } from '../../store/user'

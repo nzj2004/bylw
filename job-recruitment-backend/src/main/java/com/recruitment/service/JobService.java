@@ -21,6 +21,8 @@ public interface JobService extends IService<Job> {
                                          Integer minSalary, Integer maxSalary, 
                                          Integer status, Long current, Long size);
 
+    Result<PageResult<JobDTO>> listHotJobs(Long current, Long size);
+
     Result<PageResult<JobDTO>> listCompanyJobs(Long companyId, String keyword, String category, Integer status, Long current, Long size);
 
     Result<Boolean> auditJob(Long id, Integer status, String reason);
