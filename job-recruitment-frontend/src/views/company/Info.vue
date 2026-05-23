@@ -3,21 +3,56 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <h3>企业信息</h3>
-          <div>
-            <el-tag v-if="form.status === 0" type="warning" size="large">待审核</el-tag>
-            <el-tag v-else-if="form.status === 1" type="success" size="large">已通过</el-tag>
-            <el-tag v-else-if="form.status === 2" type="danger" size="large">已拒绝</el-tag>
-            <el-button v-if="isEditing" type="primary" @click="handleSave" :loading="loading">保存</el-button>
-            <el-button v-else-if="form.status !== 0" type="primary" @click="startEdit">修改</el-button>
-            <el-button v-if="canSubmitAudit" type="success" @click="handleSubmitAudit" :loading="loading">提交审核</el-button>
+          <div class="title-area">
+            <h3>企业信息</h3>
+            <el-tag :type="statusType" size="large">{{ statusText }}</el-tag>
+            <el-tag v-if="form.hasPendingChanges && form.status === 1" type="warning" size="large">
+              有待提交修改
+            </el-tag>
+          </div>
+          <div class="actions">
+            <el-button v-if="isEditing" @click="cancelEdit">取消</el-button>
+            <el-button v-if="isEditing" type="primary" plain @click="handleSave" :loading="loading">
+              保存草稿
+            </el-button>
+            <el-button v-else-if="canEdit" type="primary" plain @click="startEdit">修改资料</el-button>
+            <el-button v-if="canSubmitAudit" type="success" @click="handleSubmitAudit" :loading="loading">
+              提交审核
+            </el-button>
           </div>
         </div>
       </template>
-      
+
+      <el-alert
+        v-if="form.status === 0"
+        title="企业信息正在审核"
+        description="审核期间正式企业资料不会被更新；审核通过后，新资料才会生效。"
+        type="warning"
+        :closable="false"
+        show-icon
+        class="status-alert"
+      />
+      <el-alert
+        v-else-if="form.status === 2"
+        title="企业审核未通过"
+        :description="form.rejectReason || '请修改企业资料后重新提交审核。'"
+        type="error"
+        :closable="false"
+        show-icon
+        class="status-alert"
+      />
+      <el-alert
+        v-else-if="form.hasPendingChanges"
+        title="有已保存但未提交审核的修改"
+        description="点击右上角“提交审核”后，运营审核通过才会更新正式企业资料。"
+        type="info"
+        :closable="false"
+        show-icon
+        class="status-alert"
+      />
+
       <el-form :model="form" label-position="top">
-        <!-- Logo上传 -->
-        <el-form-item label="企业Logo">
+        <el-form-item label="企业 Logo">
           <el-upload
             class="logo-uploader"
             action=""
@@ -27,12 +62,12 @@
             accept="image/jpeg,image/png,image/gif,image/webp"
             :disabled="!isEditing"
           >
-            <img v-if="form.logoUrl" :src="getFullImageUrl(form.logoUrl)" class="logo" />
+            <img v-if="form.logoUrl" :src="getImageUrl(form.logoUrl)" class="logo" />
             <el-icon v-else class="logo-uploader-icon"><Plus /></el-icon>
           </el-upload>
-          <div class="upload-tip" v-if="isEditing">支持 JPG、PNG、GIF、WEBP 格式，大小不超过5MB</div>
+          <div class="upload-tip" v-if="isEditing">支持 JPG、PNG、GIF、WEBP，大小不超过 5MB</div>
         </el-form-item>
-        
+
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="企业名称">
@@ -59,7 +94,7 @@
             </el-form-item>
           </el-col>
         </el-row>
-        
+
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="企业规模">
@@ -80,17 +115,17 @@
             </el-form-item>
           </el-col>
         </el-row>
-        
+
         <el-form-item label="企业地址">
           <el-input v-model="form.address" placeholder="请输入企业地址" :disabled="!isEditing" />
         </el-form-item>
-        
+
         <el-form-item label="企业简介">
           <el-input v-model="form.description" type="textarea" :rows="5" placeholder="请描述企业简介" :disabled="!isEditing" />
         </el-form-item>
-        
+
         <el-divider>联系人信息</el-divider>
-        
+
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="联系人">
@@ -108,16 +143,6 @@
             </el-form-item>
           </el-col>
         </el-row>
-        
-        <el-alert 
-          v-if="form.status === 2 && form.rejectReason" 
-          title="拒绝原因" 
-          type="error" 
-          :closable="false"
-          show-icon
-        >
-          {{ form.rejectReason }}
-        </el-alert>
       </el-form>
     </el-card>
   </div>
@@ -129,54 +154,24 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getCompanyInfo, saveCompanyInfo, submitCompanyAudit } from '../../api/user'
 import { uploadImage } from '../../api/upload'
+import { getImageUrl } from '../../utils/image'
 
 const loading = ref(false)
 const isEditing = ref(false)
-const uploading = ref(false)
+const originalForm = ref(null)
 
-// 行业分类选项 - 支持选择大类或子类
 const industryOptions = [
-  { value: '互联网', label: '互联网' },
-  { value: '电子商务', label: '电子商务' },
-  { value: '计算机软件', label: '计算机软件' },
-  { value: '生活服务(O2O)', label: '生活服务(O2O)' },
-  { value: '企业服务', label: '企业服务' },
-  { value: '医疗健康', label: '医疗健康' },
-  { value: '游戏', label: '游戏' },
-  { value: '人工智能', label: '人工智能' },
-  { value: '云计算', label: '云计算' },
-  { value: '大数据', label: '大数据' },
-  { value: '半导体/芯片', label: '半导体/芯片' },
-  { value: '电子/硬件开发', label: '电子/硬件开发' },
-  { value: '通信/网络设备', label: '通信/网络设备' },
-  { value: '智能硬件/消费电子', label: '智能硬件/消费电子' },
-  { value: '银行', label: '银行' },
-  { value: '证券', label: '证券' },
-  { value: '保险', label: '保险' },
-  { value: '基金', label: '基金' },
-  { value: '互联网金融', label: '互联网金融' },
-  { value: '房地产开发', label: '房地产开发' },
-  { value: '物业管理', label: '物业管理' },
-  { value: '建筑设计', label: '建筑设计' },
-  { value: '工程施工', label: '工程施工' },
-  { value: '汽车研发', label: '汽车研发' },
-  { value: '汽车制造', label: '汽车制造' },
-  { value: '机械设计', label: '机械设计' },
-  { value: '机械制造', label: '机械制造' },
-  { value: '快消品', label: '快消品' },
-  { value: '零售', label: '零售' },
-  { value: '食品饮料', label: '食品饮料' },
-  { value: '学前教育', label: '学前教育' },
-  { value: 'K12教育', label: 'K12教育' },
-  { value: '高等教育', label: '高等教育' },
-  { value: '职业培训', label: '职业培训' },
-  { value: '医疗器械', label: '医疗器械' },
-  { value: '制药', label: '制药' },
-  { value: '医院', label: '医院' },
-  { value: '其他行业', label: '其他行业' }
-]
+  '互联网', '电子商务', '计算机软件', '生活服务(O2O)', '企业服务', '医疗健康',
+  '游戏', '人工智能', '云计算', '大数据', '半导体/芯片', '电子/硬件开发',
+  '通信/网络设备', '智能硬件/消费电子', '银行', '证券', '保险', '基金',
+  '互联网金融', '房地产开发', '物业管理', '建筑设计', '工程施工', '汽车研发',
+  '汽车制造', '机械设计', '机械制造', '快消品', '零售', '食品饮料',
+  '学前教育', 'K12教育', '高等教育', '职业培训', '医疗器械', '制药',
+  '医院', '其他行业'
+].map(item => ({ value: item, label: item }))
 
 const form = reactive({
+  id: null,
   companyName: '',
   industry: '',
   scale: '',
@@ -188,52 +183,46 @@ const form = reactive({
   contactEmail: '',
   logoUrl: '',
   status: 0,
-  rejectReason: ''
+  statusName: '',
+  rejectReason: '',
+  hasPendingChanges: false
 })
 
-// 获取完整的图片URL
-const getFullImageUrl = (url) => {
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  return 'http://localhost:8080' + url
-}
-
-// 处理Logo上传
-const handleLogoChange = async (file) => {
-  try {
-    uploading.value = true
-    const response = await uploadImage(file.raw)
-    form.logoUrl = response.data.url
-    ElMessage.success('Logo上传成功')
-  } catch (error) {
-    ElMessage.error(error.response?.data?.message || 'Logo上传失败')
-    console.error(error)
-  } finally {
-    uploading.value = false
-  }
-}
-
-// 计算是否可以提交审核
-const canSubmitAudit = computed(() => {
-  // 未提交过审核，或者被拒绝后可以重新提交
-  return !isEditing.value && (form.status === 0 || form.status === 2)
+const statusText = computed(() => {
+  if (form.status === 0) return '审核中'
+  if (form.status === 1) return '已通过'
+  if (form.status === 2) return '未通过'
+  return '未提交'
 })
+
+const statusType = computed(() => {
+  if (form.status === 0) return 'warning'
+  if (form.status === 1) return 'success'
+  if (form.status === 2) return 'danger'
+  return 'info'
+})
+
+const canEdit = computed(() => form.status !== 0)
+const canSubmitAudit = computed(() => !isEditing.value && (form.status === 2 || (form.status === 1 && form.hasPendingChanges)))
+
+const snapshot = () => JSON.parse(JSON.stringify(form))
+
+const fillForm = (data = {}) => {
+  Object.keys(form).forEach(key => {
+    form[key] = data[key] ?? (typeof form[key] === 'boolean' ? false : '')
+  })
+  form.id = data.id || null
+  form.status = data.status ?? 0
+  form.hasPendingChanges = Boolean(data.hasPendingChanges)
+  originalForm.value = snapshot()
+}
 
 const fetchCompanyInfo = async () => {
   try {
     loading.value = true
     const res = await getCompanyInfo()
-    if (res.data) {
-      Object.keys(form).forEach(key => {
-        if (res.data[key] !== undefined && res.data[key] !== null) {
-          form[key] = res.data[key]
-        }
-      })
-      // 如果没有企业信息，默认进入编辑模式
-      if (!res.data.companyName) {
-        isEditing.value = true
-      }
-    } else {
+    fillForm(res.data || {})
+    if (!form.companyName) {
       isEditing.value = true
     }
   } catch (error) {
@@ -245,14 +234,36 @@ const fetchCompanyInfo = async () => {
 }
 
 const startEdit = () => {
+  originalForm.value = snapshot()
   isEditing.value = true
+}
+
+const cancelEdit = () => {
+  if (originalForm.value) {
+    fillForm(originalForm.value)
+  }
+  isEditing.value = false
+}
+
+const handleLogoChange = async (file) => {
+  try {
+    loading.value = true
+    const response = await uploadImage(file.raw)
+    form.logoUrl = response.data.url
+    ElMessage.success('Logo 上传成功')
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || 'Logo 上传失败')
+    console.error(error)
+  } finally {
+    loading.value = false
+  }
 }
 
 const handleSave = async () => {
   try {
     loading.value = true
     await saveCompanyInfo(form)
-    ElMessage.success('企业信息保存成功')
+    ElMessage.success(form.id ? '修改已保存，请提交审核' : '企业信息已保存，正在等待审核')
     isEditing.value = false
     await fetchCompanyInfo()
   } catch (error) {
@@ -262,22 +273,21 @@ const handleSave = async () => {
   }
 }
 
-// 提交审核
 const handleSubmitAudit = async () => {
   try {
     await ElMessageBox.confirm(
-      '提交审核后，运营人员将对您的企业进行审核，确认提交吗？',
+      '提交审核后，企业岗位将暂时下架。审核通过后，新企业资料才会生效。',
       '提交审核确认',
       {
-        confirmButtonText: '确定',
+        confirmButtonText: '提交审核',
         cancelButtonText: '取消',
         type: 'warning'
       }
     )
-    
+
     loading.value = true
     await submitCompanyAudit()
-    ElMessage.success('已提交审核，请等待运营人员审核')
+    ElMessage.success('已提交审核，请等待运营审核')
     await fetchCompanyInfo()
   } catch (error) {
     if (error !== 'cancel') {
@@ -304,10 +314,22 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
+}
+
+.title-area,
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .card-header h3 {
   margin: 0;
+}
+
+.status-alert {
+  margin-bottom: 20px;
 }
 
 .logo-uploader .el-upload {
@@ -333,6 +355,7 @@ onMounted(() => {
 .logo {
   width: 178px;
   height: 178px;
+  object-fit: contain;
   display: block;
 }
 
@@ -341,5 +364,4 @@ onMounted(() => {
   color: #999;
   margin-top: 10px;
 }
-
 </style>

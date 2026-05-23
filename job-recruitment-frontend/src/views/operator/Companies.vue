@@ -7,19 +7,26 @@
           <el-radio-group v-model="filterStatus" @change="fetchCompanies">
             <el-radio-button :label="0">待审核</el-radio-button>
             <el-radio-button :label="1">已通过</el-radio-button>
-            <el-radio-button :label="2">已拒绝</el-radio-button>
+            <el-radio-button :label="2">未通过</el-radio-button>
             <el-radio-button :label="null">全部</el-radio-button>
           </el-radio-group>
         </div>
       </template>
-      
+
       <el-table :data="companies" stripe v-loading="loading">
-        <el-table-column prop="companyName" label="企业名称" width="200" />
+        <el-table-column prop="companyName" label="企业名称" min-width="180">
+          <template #default="{ row }">
+            <div class="company-name-cell">
+              <span>{{ row.companyName }}</span>
+              <el-tag v-if="row.hasPendingChanges" size="small" type="warning">资料变更</el-tag>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="industry" label="所属行业" width="150" />
         <el-table-column prop="scale" label="企业规模" width="120" />
-        <el-table-column prop="contactName" label="联系人" width="100" />
-        <el-table-column prop="contactPhone" label="联系电话" width="130" />
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="contactName" label="联系人" width="110" />
+        <el-table-column prop="contactPhone" label="联系电话" width="140" />
+        <el-table-column prop="status" label="状态" width="110">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">{{ row.statusName }}</el-tag>
           </template>
@@ -28,22 +35,16 @@
         <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="viewDetail(row)">详情</el-button>
-            <el-button 
-              v-if="row.status === 0" 
-              type="success" 
-              size="small" 
-              @click="handleAudit(row, 1)"
-            >通过</el-button>
-            <el-button 
-              v-if="row.status === 0" 
-              type="danger" 
-              size="small" 
-              @click="showRejectDialog(row)"
-            >拒绝</el-button>
+            <el-button v-if="row.status === 0" type="success" size="small" @click="handleAudit(row, 1)">
+              通过
+            </el-button>
+            <el-button v-if="row.status === 0" type="danger" size="small" @click="showRejectDialog(row)">
+              拒绝
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
-      
+
       <div class="pagination" v-if="pagination.total > 0">
         <el-pagination
           v-model:current-page="pagination.current"
@@ -53,12 +54,19 @@
           @current-change="fetchCompanies"
         />
       </div>
-      
+
       <el-empty v-if="companies.length === 0 && !loading" description="暂无企业数据" />
     </el-card>
 
-    <!-- 企业详情对话框 -->
     <el-dialog v-model="detailVisible" title="企业详情" width="800px">
+      <el-alert
+        v-if="currentCompany?.hasPendingChanges"
+        title="当前展示的是企业提交的待审核资料"
+        type="warning"
+        :closable="false"
+        show-icon
+        class="detail-alert"
+      />
       <el-descriptions :column="2" border v-if="currentCompany">
         <el-descriptions-item label="企业名称">{{ currentCompany.companyName }}</el-descriptions-item>
         <el-descriptions-item label="所属行业">{{ currentCompany.industry }}</el-descriptions-item>
@@ -78,17 +86,16 @@
       </el-descriptions>
     </el-dialog>
 
-    <!-- 拒绝原因对话框 -->
     <el-dialog v-model="rejectDialogVisible" title="拒绝原因" width="500px">
-      <el-input 
-        v-model="rejectReason" 
-        type="textarea" 
-        :rows="4" 
+      <el-input
+        v-model="rejectReason"
+        type="textarea"
+        :rows="4"
         placeholder="请输入拒绝原因"
       />
       <template #footer>
         <el-button @click="rejectDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmReject" :disabled="!rejectReason.trim">确定</el-button>
+        <el-button type="primary" @click="confirmReject" :disabled="!rejectReason.trim()">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -118,7 +125,6 @@ const getStatusType = (status) => {
   return types[status] || 'info'
 }
 
-// 获取企业列表
 const fetchCompanies = async () => {
   loading.value = true
   try {
@@ -126,12 +132,11 @@ const fetchCompanies = async () => {
       current: pagination.current,
       size: pagination.size
     }
-    
-    // 如果filterStatus不是null，添加状态筛选
+
     if (filterStatus.value !== null) {
       params.status = filterStatus.value
     }
-    
+
     const res = await listCompanies(params)
     companies.value = res.data.records || []
     pagination.total = res.data.total || 0
@@ -143,23 +148,20 @@ const fetchCompanies = async () => {
   }
 }
 
-// 查看详情
 const viewDetail = (row) => {
   currentCompany.value = row
   detailVisible.value = true
 }
 
-// 显示拒绝对话框
 const showRejectDialog = (row) => {
   currentCompany.value = row
   rejectReason.value = ''
   rejectDialogVisible.value = true
 }
 
-// 审核企业
 const handleAudit = async (row, status) => {
   const action = status === 1 ? '通过' : '拒绝'
-  
+
   try {
     await ElMessageBox.confirm(
       `确定要${action}该企业吗？`,
@@ -170,7 +172,7 @@ const handleAudit = async (row, status) => {
         type: 'warning'
       }
     )
-    
+
     await auditCompany(row.id, status, '')
     ElMessage.success(`审核${action}成功`)
     await fetchCompanies()
@@ -182,11 +184,10 @@ const handleAudit = async (row, status) => {
   }
 }
 
-// 确认拒绝
 const confirmReject = async () => {
   try {
     await auditCompany(currentCompany.value.id, 2, rejectReason.value)
-    ElMessage.success('已拒绝该企业')
+    ElMessage.success('已拒绝该企业，企业岗位已下架')
     rejectDialogVisible.value = false
     await fetchCompanies()
   } catch (error) {
@@ -212,9 +213,19 @@ onMounted(() => {
   align-items: center;
 }
 
+.company-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .pagination {
   margin-top: 20px;
   display: flex;
   justify-content: center;
+}
+
+.detail-alert {
+  margin-bottom: 16px;
 }
 </style>

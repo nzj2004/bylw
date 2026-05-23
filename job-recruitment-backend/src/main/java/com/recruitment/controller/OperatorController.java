@@ -1,12 +1,15 @@
 package com.recruitment.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.recruitment.dto.CompanyDTO;
 import com.recruitment.dto.PageResult;
 import com.recruitment.dto.Result;
 import com.recruitment.entity.Company;
+import com.recruitment.entity.Job;
 import com.recruitment.mapper.CompanyMapper;
+import com.recruitment.mapper.JobMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +26,9 @@ public class OperatorController {
 
     @Autowired
     private CompanyMapper companyMapper;
+
+    @Autowired
+    private JobMapper jobMapper;
 
     /**
      * 获取企业列表（支持状态筛选）
@@ -75,14 +81,19 @@ public class OperatorController {
             return Result.error("拒绝时必须填写原因");
         }
         
-        Company updateCompany = new Company();
-        updateCompany.setId(id);
-        updateCompany.setStatus(status);
-        if (status == Company.STATUS_REJECTED) {
+        if (status == Company.STATUS_APPROVED) {
+            approveCompany(company);
+        } else {
+            Company updateCompany = new Company();
+            updateCompany.setId(id);
+            updateCompany.setStatus(status);
             updateCompany.setRejectReason(reason);
+            companyMapper.updateById(updateCompany);
         }
-        
-        companyMapper.updateById(updateCompany);
+
+        if (status != Company.STATUS_APPROVED) {
+            offlineCompanyJobs(id);
+        }
         return Result.success(true);
     }
 
@@ -92,10 +103,68 @@ public class OperatorController {
     private CompanyDTO convertToDTO(Company company) {
         CompanyDTO dto = new CompanyDTO();
         BeanUtils.copyProperties(company, dto);
+        dto.setHasPendingChanges(company.hasPendingChanges());
+        if (company.hasPendingChanges() && company.getStatus() != null && company.getStatus() != Company.STATUS_APPROVED) {
+            applyPendingDisplay(company, dto);
+        }
         dto.setStatusName(company.getStatusName());
         if (company.getCreateTime() != null) {
             dto.setCreateTime(company.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         }
         return dto;
+    }
+
+    private void approveCompany(Company company) {
+        LambdaUpdateWrapper<Company> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(Company::getId, company.getId())
+                .set(Company::getStatus, Company.STATUS_APPROVED)
+                .set(Company::getRejectReason, "");
+
+        if (company.hasPendingChanges()) {
+            wrapper.set(Company::getCompanyName, company.getPendingCompanyName())
+                    .set(Company::getIndustry, company.getPendingIndustry())
+                    .set(Company::getScale, company.getPendingScale())
+                    .set(Company::getAddress, company.getPendingAddress())
+                    .set(Company::getDescription, company.getPendingDescription())
+                    .set(Company::getLogoUrl, company.getPendingLogoUrl())
+                    .set(Company::getWebsite, company.getPendingWebsite())
+                    .set(Company::getContactName, company.getPendingContactName())
+                    .set(Company::getContactPhone, company.getPendingContactPhone())
+                    .set(Company::getContactEmail, company.getPendingContactEmail())
+                    .set(Company::getPendingCompanyName, null)
+                    .set(Company::getPendingIndustry, null)
+                    .set(Company::getPendingScale, null)
+                    .set(Company::getPendingAddress, null)
+                    .set(Company::getPendingDescription, null)
+                    .set(Company::getPendingLogoUrl, null)
+                    .set(Company::getPendingWebsite, null)
+                    .set(Company::getPendingContactName, null)
+                    .set(Company::getPendingContactPhone, null)
+                    .set(Company::getPendingContactEmail, null);
+        }
+
+        companyMapper.update(null, wrapper);
+    }
+
+    private void applyPendingDisplay(Company company, CompanyDTO dto) {
+        dto.setCompanyName(company.getPendingCompanyName());
+        dto.setIndustry(company.getPendingIndustry());
+        dto.setScale(company.getPendingScale());
+        dto.setAddress(company.getPendingAddress());
+        dto.setDescription(company.getPendingDescription());
+        dto.setLogoUrl(company.getPendingLogoUrl());
+        dto.setWebsite(company.getPendingWebsite());
+        dto.setContactName(company.getPendingContactName());
+        dto.setContactPhone(company.getPendingContactPhone());
+        dto.setContactEmail(company.getPendingContactEmail());
+    }
+
+    private void offlineCompanyJobs(Long companyId) {
+        LambdaQueryWrapper<Job> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Job::getCompanyId, companyId);
+        wrapper.ne(Job::getStatus, Job.STATUS_OFFLINE);
+        Job update = new Job();
+        update.setStatus(Job.STATUS_OFFLINE);
+        jobMapper.update(update, wrapper);
     }
 }
