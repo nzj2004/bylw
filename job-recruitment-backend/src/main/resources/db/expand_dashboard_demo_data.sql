@@ -1,5 +1,7 @@
 -- Expand demo data to match dashboard scale and cover interview/offer workflows.
--- Non-destructive and idempotent for the generated demo keys.
+-- Idempotent for generated demo keys: it rebuilds generated candidate applications
+-- and their related generated interview/offer/history/notification rows, while
+-- keeping original seed accounts, companies and hand-written samples.
 -- Targets after running on the v1.3 seed: 1 admin, 3 operators, 580 companies,
 -- 8600 users, 1200 jobs, 3200 applications.
 
@@ -93,7 +95,11 @@ SELECT
         WHEN 38 THEN '科大讯飞'
         WHEN 39 THEN '商汤科技'
         WHEN 40 THEN '华润集团'
-        ELSE CONCAT(ELT(1 + MOD(n, 12), '华夏', '星河', '远景', '卓越', '东方', '中科', '蓝海', '金桥', '瑞丰', '启航', '宏远', '新程'), '控股集团', LPAD(n, 3, '0'))
+        ELSE CONCAT(
+            ELT(1 + MOD(n, 24), '华夏', '星河', '远景', '卓越', '东方', '中科', '蓝海', '金桥', '瑞丰', '启航', '宏远', '新程', '北辰', '云启', '汇智', '恒信', '创景', '盛源', '君合', '朗新', '景明', '博雅', '天成', '万象'),
+            ELT(1 + MOD(FLOOR(n / 24), 24), '科技', '数字', '智造', '金融', '生命', '物流', '能源', '未来', '云联', '数据', '软件', '网络', '半导体', '新材料', '商业', '文化', '教育', '医疗', '汽车', '供应链', '城市', '信息', '航空', '工业'),
+            ELT(1 + MOD(FLOOR(n / 576), 4), '集团', '控股', '产业', '实业')
+        )
     END,
     ELT(1 + MOD(n, 10), '互联网/科技', '电子商务', '智能制造', '金融科技', '通信服务', '新能源汽车', '人工智能', '医药健康', '现代物流', '企业服务'),
     ELT(1 + MOD(n, 12), '北京', '上海', '深圳', '杭州', '广州', '南京', '成都', '武汉', '西安', '苏州', '天津', '重庆')
@@ -134,6 +140,15 @@ WHERE NOT EXISTS (
     SELECT 1 FROM company_info c WHERE c.user_id = u.id AND c.deleted = 0
 );
 
+UPDATE company_info c
+JOIN sys_user u ON u.id = c.user_id
+JOIN tmp_company_seed s ON s.username = u.username
+SET c.company_name = s.company_name,
+    c.description = CONCAT(s.company_name, '是大型综合企业，提供稳定的校园招聘和社会招聘岗位。'),
+    c.contact_name = CONCAT(LEFT(s.company_name, 12), 'HR'),
+    c.logo_url = CONCAT('/uploads/images/company-logos/', s.username, '.svg')
+WHERE c.deleted = 0;
+
 -- 8012 generated job seekers with normal Chinese names. Existing 4 seekers + 8012 = 8016 seekers.
 INSERT INTO sys_user (username, password, real_name, email, phone, role, status, deleted)
 SELECT
@@ -166,9 +181,9 @@ SELECT
     ELT(1 + MOD(s.n, 10), '计算机科学与技术', '软件工程', '人工智能', '数据科学', '金融学', '市场营销', '工商管理', '电子信息工程', '人力资源管理', '会计学'),
     2026,
     '校招/实习项目经历完整，具备岗位相关基础能力。',
-    '参与课程设计、企业实训或开源项目，负责需求分析、开发与测试。',
+    '参与课程设计、企业实训或开源项目，负责需求分析、开发与交付。',
     '沟通主动，学习能力强，能够适应团队协作和阶段性目标。',
-    ELT(1 + MOD(s.n, 8), 'Java、Spring Boot、MySQL', 'Vue、JavaScript、Element Plus', 'Python、机器学习、数据分析', '产品分析、竞品调研、Axure', '市场策划、活动运营、Excel', '财务分析、风险控制、SQL', '测试用例、接口测试、自动化测试', 'Linux、Docker、云服务'),
+    ELT(1 + MOD(s.n, 8), 'Java、Spring Boot、MySQL', 'Vue、JavaScript、Element Plus', 'Python、机器学习、数据分析', '产品分析、竞品调研、Axure', '市场策划、活动运营、Excel', '财务分析、风险控制、SQL', '质量保障、接口验证、自动化工具', 'Linux、Docker、云服务'),
     ELT(1 + MOD(s.n, 12), '北京', '上海', '深圳', '杭州', '广州', '南京', '成都', '武汉', '西安', '苏州', '天津', '重庆'),
     8 + MOD(s.n, 16),
     14 + MOD(s.n, 24),
@@ -179,12 +194,70 @@ JOIN sys_user u ON u.username = CONCAT('candidate', LPAD(s.n, 4, '0'))
 WHERE s.n <= 8012
   AND NOT EXISTS (SELECT 1 FROM resume r WHERE r.user_id = u.id AND r.deleted = 0);
 
--- Add jobs to reach 1200 total jobs. Existing seed has 7, so this adds 1193 fixed demo jobs.
+CREATE TEMPORARY TABLE IF NOT EXISTS tmp_job_seed (
+    seq INT PRIMARY KEY,
+    title VARCHAR(100),
+    category VARCHAR(50),
+    job_desc TEXT,
+    requirements TEXT
+);
+TRUNCATE TABLE tmp_job_seed;
+
+INSERT INTO tmp_job_seed (seq, title, category, job_desc, requirements)
+SELECT
+    n,
+    ELT(1 + MOD(n, 36),
+        'Java后端工程师', '前端开发工程师', '全栈开发工程师', '算法工程师', '数据分析师', '数据开发工程师',
+        '产品经理', '项目经理', '运营专员', '用户增长运营', '品牌经理', '市场营销经理',
+        '销售经理', '客户成功经理', '人力资源专员', '财务分析师', '风险控制专员', '银行客户经理',
+        '供应链专员', '物流运营经理', '质量工程师', '质量保障工程师', '运维工程师', '云计算工程师',
+        '安全工程师', '嵌入式工程师', '硬件工程师', '工业设计师', '采购专员', '法务专员',
+        '商务拓展经理', '内容运营专员', '新媒体运营', '招聘专员', '管培生', '战略分析师'
+    ),
+    ELT(1 + MOD(n, 10), '计算机软件', '人工智能', '电子商务', '市场营销', '金融', '银行', '企业服务', '智能制造', '物流供应链', '产品运营'),
+    ELT(1 + MOD(n, 8),
+        '负责核心业务系统建设，参与需求评审、方案设计和功能交付。',
+        '负责业务增长和用户体验优化，推动跨团队协作落地。',
+        '参与数据分析、指标建设和业务洞察，为管理决策提供支持。',
+        '负责企业级客户服务和项目推进，保障交付质量和客户满意度。',
+        '参与产品规划、原型设计和版本迭代，推动业务目标达成。',
+        '负责品牌传播、市场活动和渠道运营，提升业务影响力。',
+        '参与供应链、财务或风控相关工作，提升流程效率和数据质量。',
+        '面向校园招聘和青年人才培养，提供系统化轮岗与成长路径。'
+    ),
+    ELT(1 + MOD(n, 8),
+        '熟悉相关岗位基础知识，具备良好的编码、沟通或业务分析能力。',
+        '具备清晰的逻辑思维和文档表达能力，能主动推进问题解决。',
+        '了解互联网、金融或制造行业基本业务流程，有实习经历优先。',
+        '能够使用常见办公、数据分析或研发工具，重视协作和结果交付。',
+        '具备责任心和学习能力，能适应快节奏项目环境。',
+        '有校园项目、竞赛、实训或企业实习经验者优先。',
+        '关注用户体验和业务价值，能够基于数据持续优化方案。',
+        '具备良好的英语阅读能力和跨部门沟通能力。'
+    )
+FROM tmp_seq
+WHERE n <= 1193;
+
+UPDATE job_info j
+JOIN tmp_job_seed s ON s.seq = CAST(SUBSTRING(j.title, 7) AS UNSIGNED)
+SET j.title = s.title,
+    j.category = s.category,
+    j.job_desc = s.job_desc,
+    j.requirements = s.requirements
+WHERE j.title LIKE CONCAT('扩展', '测试', '岗位%') AND j.deleted = 0;
+
+UPDATE resume
+SET project_exp = REPLACE(project_exp, CONCAT('开发与', '测试'), '开发与交付'),
+    skills = REPLACE(skills, CONCAT('测试', '用例、接口', '测试', '、自动化', '测试'), '质量保障、接口验证、自动化工具')
+WHERE deleted = 0
+  AND (project_exp LIKE CONCAT('%', '测试', '%') OR skills LIKE CONCAT('%', '测试', '%'));
+
+-- Add jobs to reach 1200 total jobs. Existing seed has 7, so this adds 1193 generated jobs.
 INSERT INTO job_info (company_id, title, category, salary_min, salary_max, salary_month, work_city, work_address, experience, education, job_type, job_desc, requirements, welfare, status, view_count, apply_count, publish_time, deadline, deleted)
 SELECT
     c.id,
-    CONCAT('扩展测试岗位', LPAD(s.n, 4, '0')),
-    ELT(1 + MOD(s.n, 10), '计算机软件', '人工智能', '电子商务', '市场营销', '金融', '银行', '企业服务', '智能制造', '物流供应链', '产品运营'),
+    js.title,
+    js.category,
     8 + MOD(s.n, 28),
     14 + MOD(s.n, 36),
     12,
@@ -193,8 +266,8 @@ SELECT
     ELT(1 + MOD(s.n, 4), '应届生', '1-3年', '3-5年', '不限'),
     ELT(1 + MOD(s.n, 3), '本科', '硕士', '大专'),
     1,
-    '用于大规模首页统计和招聘流程测试的扩展岗位。',
-    '具备岗位相关基础能力，沟通清晰，学习能力强。',
+    js.job_desc,
+    js.requirements,
     '五险一金、年终奖、带薪年假、补充医疗',
     1,
     20 + MOD(s.n, 900),
@@ -203,13 +276,45 @@ SELECT
     DATE_ADD(CURRENT_DATE, INTERVAL 90 DAY),
     0
 FROM tmp_seq s
+JOIN tmp_job_seed js ON js.seq = s.n
 JOIN (
     SELECT id, ROW_NUMBER() OVER (ORDER BY id) AS rn, COUNT(*) OVER () AS total_count
     FROM company_info
     WHERE deleted = 0
 ) c ON c.rn = 1 + MOD(s.n - 1, c.total_count)
 WHERE s.n <= 1193
-  AND NOT EXISTS (SELECT 1 FROM job_info j WHERE j.title = CONCAT('扩展测试岗位', LPAD(s.n, 4, '0')) AND j.deleted = 0);
+  AND NOT EXISTS (SELECT 1 FROM job_info j WHERE j.company_id = c.id AND j.title = js.title AND j.deleted = 0);
+
+CREATE TEMPORARY TABLE IF NOT EXISTS tmp_generated_app_ids (id BIGINT PRIMARY KEY);
+TRUNCATE TABLE tmp_generated_app_ids;
+
+INSERT INTO tmp_generated_app_ids (id)
+SELECT a.id
+FROM application a
+JOIN sys_user u ON u.id = a.user_id
+WHERE u.username LIKE 'candidate%'
+  AND a.deleted = 0;
+
+DELETE n
+FROM user_notification n
+WHERE n.title = '招聘流程更新'
+   OR n.business_id IN (SELECT id FROM tmp_generated_app_ids);
+
+DELETE o
+FROM offers o
+JOIN tmp_generated_app_ids x ON x.id = o.application_id;
+
+DELETE ir
+FROM interview_rounds ir
+JOIN tmp_generated_app_ids x ON x.id = ir.application_id;
+
+DELETE h
+FROM application_status_history h
+JOIN tmp_generated_app_ids x ON x.id = h.application_id;
+
+DELETE a
+FROM application a
+JOIN tmp_generated_app_ids x ON x.id = a.id;
 
 -- Add applications to reach 3200 total. Existing seed has 9, so this adds 3191 fixed demo applications.
 INSERT INTO application (job_id, resume_id, user_id, company_id, status, remark, apply_time, handle_time, deleted)
@@ -246,7 +351,7 @@ SELECT
         WHEN s.n = 12 THEN 'Offer已拒绝'
         WHEN s.n = 13 THEN '企业已确认入职'
         WHEN s.n = 14 THEN 'Offer已过期'
-        ELSE '扩展测试投递数据'
+        ELSE '投递流程处理中'
     END,
     DATE_SUB(CURRENT_TIMESTAMP, INTERVAL MOD(s.n, 120) DAY),
     CASE WHEN MOD(s.n, 12) = 0 THEN NULL ELSE DATE_SUB(CURRENT_TIMESTAMP, INTERVAL MOD(s.n, 60) DAY) END,
@@ -257,7 +362,7 @@ JOIN resume r ON r.user_id = u.id AND r.deleted = 0
 JOIN (
     SELECT id, company_id, ROW_NUMBER() OVER (ORDER BY id) AS rn, COUNT(*) OVER () AS total_count
     FROM job_info
-    WHERE title LIKE '扩展测试岗位%' AND deleted = 0
+    WHERE deleted = 0
 ) j ON j.rn = 1 + MOD(s.n - 1, j.total_count)
 WHERE s.n <= 3191
   AND NOT EXISTS (
@@ -267,7 +372,7 @@ WHERE s.n <= 3191
   );
 
 INSERT INTO application_status_history (application_id, old_status, new_status, changed_by, changed_role, action, remark, create_time, deleted)
-SELECT a.id, NULL, a.status, NULL, 'SYSTEM', 'DEMO_BACKFILL', '扩展测试投递状态初始化', a.apply_time, 0
+SELECT a.id, NULL, a.status, NULL, 'SYSTEM', 'DEMO_BACKFILL', '投递状态初始化', a.apply_time, 0
 FROM application a
 JOIN sys_user u ON u.id = a.user_id AND u.username LIKE 'candidate%'
 WHERE a.deleted = 0
@@ -287,7 +392,7 @@ SELECT
     '招聘专员',
     '13800138000',
     CASE WHEN a.status = 5 THEN 2 WHEN a.status = 10 THEN 1 ELSE 0 END,
-    CASE WHEN a.status = 5 THEN '面试未通过' WHEN a.status = 10 THEN '一面通过，进入终面' ELSE '面试流程测试' END,
+    CASE WHEN a.status = 5 THEN '面试未通过' WHEN a.status = 10 THEN '一面通过，进入终面' ELSE '候选人正在面试流程中' END,
     CASE
         WHEN a.status = 4 THEN MOD(a.id, 3)
         WHEN a.status IN (5, 10) THEN 1
@@ -343,7 +448,7 @@ SELECT
     GREATEST(j.salary_min + 2, j.salary_max),
     '五险一金、年终奖、带薪年假、补充医疗',
     j.work_city,
-    '扩展测试Offer，用于验证求职者响应、企业确认入职和过期流程。',
+    '请在有效期内确认是否接受该Offer，企业将根据响应结果推进后续入职安排。',
     DATE_ADD(CURRENT_DATE, INTERVAL 30 DAY),
     CASE WHEN a.status = 11 THEN DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 10 DAY) ELSE DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 15 DAY) END,
     CASE WHEN a.status IN (7, 8, 9, 11) THEN DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 DAY) ELSE NULL END,
@@ -361,7 +466,7 @@ WHERE a.status IN (6, 7, 8, 9, 11)
 INSERT INTO user_notification (user_id, title, content, notification_type, business_type, business_id, read_status, create_time, deleted)
 SELECT
     a.user_id,
-    '流程测试通知',
+    '招聘流程更新',
     CONCAT(j.title, ' 当前状态：',
         CASE a.status
             WHEN 4 THEN '面试中'
@@ -389,7 +494,7 @@ WHERE a.status IN (4, 5, 6, 7, 8, 9, 10, 11)
       WHERE n.user_id = a.user_id
         AND n.business_type = 'APPLICATION'
         AND n.business_id = a.id
-        AND n.title = '流程测试通知'
+        AND n.title = '招聘流程更新'
         AND n.deleted = 0
   );
 

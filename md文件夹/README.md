@@ -1197,7 +1197,7 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
 
 - `insert_test_data.sql`：重置型演示数据脚本，会清理并重建演示业务数据，执行前需要确认不再保留当前演示数据。
 - `repair_seed_chinese_data.sql`：非破坏性修复脚本，只修复中文文案、薪资K单位、状态历史和站内通知样例，不清理其他已有数据。
-- `expand_dashboard_demo_data.sql`：非破坏性扩展脚本，用于补齐首页指标级测试数据，当前验证口径为 580 家企业、1200 个职位、8600 位用户、3200 条投递；管理员不新增，运营共 3 位。
+- `expand_dashboard_demo_data.sql`：扩展数据脚本，用于补齐首页指标级测试数据，当前验证口径为 580 家企业、1200 个职位、8600 位用户、3200 条投递；管理员不新增，运营共 3 位。脚本会重建其生成的候选人投递及关联面试/Offer/历史/通知，不清理原始测试账号和手工样例。
 - `user_notification` 是 v1.3 新增表，用于站内通知列表、未读数、单条已读和全部已读。
 - 薪资字段统一按 K 存储，例如 `salary_min=16` 表示 `16K`，不写入 `16000`。
 
