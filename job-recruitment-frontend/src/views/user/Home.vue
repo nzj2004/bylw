@@ -124,7 +124,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Briefcase, OfficeBuilding, User, DocumentChecked, Clock, Close } from '@element-plus/icons-vue'
-import { listHotJobs } from '../../api/job'
+import { listHotJobs, listJobs } from '../../api/job'
 import { getImageUrl } from '../../utils/image'
 
 const router = useRouter()
@@ -225,12 +225,29 @@ const stats = ref({
 })
 const hotJobs = ref([])
 
+const getRecords = (res) => {
+  return res?.data?.records || res?.records || res?.data?.data?.records || []
+}
+
 const fetchHotJobs = async () => {
   try {
     const res = await listHotJobs({ current: 1, size: 6 })
-    hotJobs.value = res.data.records
+    const records = getRecords(res)
+    if (records.length > 0) {
+      hotJobs.value = records
+      return
+    }
+
+    const fallback = await listJobs({ current: 1, size: 6 })
+    hotJobs.value = getRecords(fallback)
   } catch (error) {
     console.error(error)
+    try {
+      const fallback = await listJobs({ current: 1, size: 6 })
+      hotJobs.value = getRecords(fallback)
+    } catch (fallbackError) {
+      console.error(fallbackError)
+    }
   }
 }
 
