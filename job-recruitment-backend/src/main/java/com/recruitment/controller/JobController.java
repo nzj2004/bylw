@@ -144,8 +144,28 @@ public class JobController {
     }
 
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('COMPANY', 'ADMIN')")
     public Result<Boolean> toggleJobStatus(@PathVariable Long id, @RequestParam Integer status) {
+        if (!canManageJob(id)) {
+            return Result.error("无权操作该职位");
+        }
+        Integer role = SecurityUtil.getCurrentRole();
+        if (role != null && role == 3) {
+            if (status != Job.STATUS_PUBLISHED && status != Job.STATUS_OFFLINE) {
+                return Result.error("企业只能上架或下架职位");
+            }
+            Job existing = jobService.getById(id);
+            if (existing == null) {
+                return Result.error("职位不存在");
+            }
+            if (existing.getStatus() != Job.STATUS_PUBLISHED && existing.getStatus() != Job.STATUS_OFFLINE) {
+                return Result.error("待审核或未通过职位不能直接上下架");
+            }
+            Company company = companyMapper.selectByUserId(SecurityUtil.getCurrentUserId());
+            if (company == null || company.getStatus() == null || company.getStatus() != Company.STATUS_APPROVED) {
+                return Result.error("企业审核通过后才能上架职位");
+            }
+        }
         return jobService.toggleJobStatus(id, status);
     }
 

@@ -5,7 +5,6 @@ import com.recruitment.entity.Application;
 import com.recruitment.entity.ApplicationStatusHistory;
 import com.recruitment.entity.InterviewRound;
 import com.recruitment.entity.Company;
-import com.recruitment.entity.Job;
 import com.recruitment.entity.Offer;
 import com.recruitment.entity.Resume;
 import com.recruitment.entity.UserNotification;
@@ -13,7 +12,6 @@ import com.recruitment.mapper.ApplicationMapper;
 import com.recruitment.mapper.ApplicationStatusHistoryMapper;
 import com.recruitment.mapper.CompanyMapper;
 import com.recruitment.mapper.InterviewRoundMapper;
-import com.recruitment.mapper.JobMapper;
 import com.recruitment.mapper.OfferMapper;
 import com.recruitment.mapper.ResumeMapper;
 import com.recruitment.mapper.UserNotificationMapper;
@@ -23,7 +21,6 @@ import com.recruitment.service.OfferExpirationService;
 import com.recruitment.service.UserNotificationService;
 import com.recruitment.service.UserService;
 import com.recruitment.utils.SecurityUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -48,9 +45,6 @@ public class UserController {
 
     @Autowired
     private CompanyMapper companyMapper;
-
-    @Autowired
-    private JobMapper jobMapper;
 
     @Autowired
     private ResumeMapper resumeMapper;
@@ -203,13 +197,13 @@ public class UserController {
             return Result.error("请先修改并保存企业信息，再提交审核");
         }
         
-        // 更新为待审核状态
         Company company = new Company();
         company.setId(existing.getId());
-        company.setStatus(Company.STATUS_PENDING);
         company.setRejectReason("");
+        if (existing.getStatus() == null || existing.getStatus() != Company.STATUS_APPROVED) {
+            company.setStatus(Company.STATUS_PENDING);
+        }
         companyMapper.updateById(company);
-        offlineCompanyJobs(existing.getId());
         
         return Result.success(true);
     }
@@ -794,15 +788,6 @@ public class UserController {
         dto.setContactName(company.getPendingContactName());
         dto.setContactPhone(company.getPendingContactPhone());
         dto.setContactEmail(company.getPendingContactEmail());
-    }
-
-    private void offlineCompanyJobs(Long companyId) {
-        LambdaQueryWrapper<Job> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Job::getCompanyId, companyId);
-        wrapper.ne(Job::getStatus, Job.STATUS_OFFLINE);
-        Job update = new Job();
-        update.setStatus(Job.STATUS_OFFLINE);
-        jobMapper.update(update, wrapper);
     }
 
     private ApplicationDTO convertApplicationToDTO(Application application) {

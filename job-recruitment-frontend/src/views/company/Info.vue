@@ -7,7 +7,7 @@
             <h3>企业信息</h3>
             <el-tag :type="statusType" size="large">{{ statusText }}</el-tag>
             <el-tag v-if="form.hasPendingChanges && form.status === 1" type="warning" size="large">
-              有待提交修改
+              资料变更待审核
             </el-tag>
           </div>
           <div class="actions">
@@ -43,8 +43,8 @@
       />
       <el-alert
         v-else-if="form.hasPendingChanges"
-        title="有已保存但未提交审核的修改"
-        description="点击右上角“提交审核”后，运营审核通过才会更新正式企业资料。"
+        title="企业资料变更待审核"
+        description="运营审核通过后才会更新正式企业资料；审核期间职位继续展示原企业资料，不会自动下架。"
         type="info"
         :closable="false"
         show-icon
@@ -276,7 +276,7 @@ const handleSave = async () => {
 const handleSubmitAudit = async () => {
   try {
     await ElMessageBox.confirm(
-      '提交审核后，企业岗位将暂时下架。审核通过后，新企业资料才会生效。',
+      '提交审核后，运营审核通过才会更新正式企业资料；审核期间职位继续展示原企业资料，不会自动下架。',
       '提交审核确认',
       {
         confirmButtonText: '提交审核',

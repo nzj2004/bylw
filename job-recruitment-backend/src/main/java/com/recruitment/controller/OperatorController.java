@@ -43,7 +43,31 @@ public class OperatorController {
         
         // 状态筛选
         if (status != null) {
-            wrapper.eq(Company::getStatus, status);
+            if (status == Company.STATUS_PENDING) {
+                wrapper.and(w -> w.eq(Company::getStatus, Company.STATUS_PENDING)
+                        .or()
+                        .isNotNull(Company::getPendingCompanyName)
+                        .or()
+                        .isNotNull(Company::getPendingIndustry)
+                        .or()
+                        .isNotNull(Company::getPendingScale)
+                        .or()
+                        .isNotNull(Company::getPendingAddress)
+                        .or()
+                        .isNotNull(Company::getPendingDescription)
+                        .or()
+                        .isNotNull(Company::getPendingLogoUrl)
+                        .or()
+                        .isNotNull(Company::getPendingWebsite)
+                        .or()
+                        .isNotNull(Company::getPendingContactName)
+                        .or()
+                        .isNotNull(Company::getPendingContactPhone)
+                        .or()
+                        .isNotNull(Company::getPendingContactEmail));
+            } else {
+                wrapper.eq(Company::getStatus, status);
+            }
         }
         
         // 按创建时间倒序
@@ -81,8 +105,14 @@ public class OperatorController {
             return Result.error("拒绝时必须填写原因");
         }
         
+        boolean approvedCompanyInfoChange = company.getStatus() != null
+                && company.getStatus() == Company.STATUS_APPROVED
+                && company.hasPendingChanges();
+
         if (status == Company.STATUS_APPROVED) {
             approveCompany(company);
+        } else if (approvedCompanyInfoChange) {
+            rejectCompanyInfoChange(id, reason);
         } else {
             Company updateCompany = new Company();
             updateCompany.setId(id);
@@ -91,7 +121,7 @@ public class OperatorController {
             companyMapper.updateById(updateCompany);
         }
 
-        if (status != Company.STATUS_APPROVED) {
+        if (status != Company.STATUS_APPROVED && !approvedCompanyInfoChange) {
             offlineCompanyJobs(id);
         }
         return Result.success(true);
@@ -104,7 +134,7 @@ public class OperatorController {
         CompanyDTO dto = new CompanyDTO();
         BeanUtils.copyProperties(company, dto);
         dto.setHasPendingChanges(company.hasPendingChanges());
-        if (company.hasPendingChanges() && company.getStatus() != null && company.getStatus() != Company.STATUS_APPROVED) {
+        if (company.hasPendingChanges()) {
             applyPendingDisplay(company, dto);
         }
         dto.setStatusName(company.getStatusName());
@@ -143,6 +173,24 @@ public class OperatorController {
                     .set(Company::getPendingContactEmail, null);
         }
 
+        companyMapper.update(null, wrapper);
+    }
+
+    private void rejectCompanyInfoChange(Long companyId, String reason) {
+        LambdaUpdateWrapper<Company> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(Company::getId, companyId)
+                .set(Company::getStatus, Company.STATUS_APPROVED)
+                .set(Company::getRejectReason, reason)
+                .set(Company::getPendingCompanyName, null)
+                .set(Company::getPendingIndustry, null)
+                .set(Company::getPendingScale, null)
+                .set(Company::getPendingAddress, null)
+                .set(Company::getPendingDescription, null)
+                .set(Company::getPendingLogoUrl, null)
+                .set(Company::getPendingWebsite, null)
+                .set(Company::getPendingContactName, null)
+                .set(Company::getPendingContactPhone, null)
+                .set(Company::getPendingContactEmail, null);
         companyMapper.update(null, wrapper);
     }
 

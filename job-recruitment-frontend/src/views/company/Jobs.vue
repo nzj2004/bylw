@@ -63,9 +63,25 @@
         </el-table-column>
         <el-table-column prop="viewCount" label="浏览" width="80" />
         <el-table-column prop="applyCount" label="投递数" width="80" />
-        <el-table-column label="操作" width="200">
+        <el-table-column label="操作" width="260">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button
+              v-if="row.status === 1"
+              type="warning"
+              size="small"
+              @click="handleToggleStatus(row, 3)"
+            >
+              下架
+            </el-button>
+            <el-button
+              v-else-if="row.status === 3"
+              type="success"
+              size="small"
+              @click="handleToggleStatus(row, 1)"
+            >
+              上架
+            </el-button>
             <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -170,7 +186,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
-import { listCompanyJobs, createJob, updateJob, deleteJob } from '../../api/job'
+import { listCompanyJobs, createJob, updateJob, deleteJob, toggleJobStatus } from '../../api/job'
 import { useUserStore } from '../../store/user'
 import { JOB_CATEGORY_OPTIONS, resolveCategoryFilterValue } from '../../constants/jobCategoryOptions'
 
@@ -301,6 +317,27 @@ const handleDelete = async (row) => {
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('删除失败')
+    }
+  }
+}
+
+const handleToggleStatus = async (row, status) => {
+  const action = status === 3 ? '下架' : '上架'
+  const message = status === 3
+    ? '下架后，求职者端将不再展示该职位。'
+    : '上架后，求职者端将重新展示该职位。'
+  try {
+    await ElMessageBox.confirm(message, `${action}职位确认`, {
+      type: 'warning',
+      confirmButtonText: action,
+      cancelButtonText: '取消'
+    })
+    await toggleJobStatus(row.id, status)
+    ElMessage.success(`${action}成功`)
+    fetchJobs()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(`${action}失败`)
     }
   }
 }
