@@ -9,6 +9,7 @@ import com.recruitment.entity.Job;
 import com.recruitment.mapper.CompanyMapper;
 import com.recruitment.mapper.JobMapper;
 import com.recruitment.utils.JobCategoryResolver;
+import com.recruitment.utils.SecurityUtil;
 import com.recruitment.service.JobService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -120,7 +121,10 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements JobSe
         if (status != null) {
             wrapper.eq(Job::getStatus, status);
         } else {
-            wrapper.eq(Job::getStatus, Job.STATUS_PUBLISHED);
+            Integer role = SecurityUtil.getCurrentRole();
+            if (role == null || (role != 1 && role != 2)) {
+                wrapper.eq(Job::getStatus, Job.STATUS_PUBLISHED);
+            }
         }
 
         wrapper.orderByDesc(Job::getPublishTime, Job::getCreateTime);
@@ -255,6 +259,12 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements JobSe
         Job job = new Job();
         job.setId(id);
         job.setStatus(status);
+        if (status == Job.STATUS_PUBLISHED) {
+            job.setPublishTime(LocalDateTime.now());
+        }
+        if (status == Job.STATUS_PENDING) {
+            job.setRejectReason(null);
+        }
         baseMapper.updateById(job);
         return Result.success(true);
     }

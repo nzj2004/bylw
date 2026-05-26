@@ -205,7 +205,7 @@ const viewDetail = (row) => {
 
 const toggleStatus = (row) => {
   const newStatus = row.status === 3 ? 1 : 3
-  const action = newStatus === 3 ? '上架' : '下架'
+  const action = newStatus === 3 ? '下架' : '上架'
   ElMessageBox.confirm(`确定${action}该职位？`, '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',

@@ -78,9 +78,9 @@
               v-else-if="row.status === 3"
               type="success"
               size="small"
-              @click="handleToggleStatus(row, 1)"
+              @click="handleToggleStatus(row, 0)"
             >
-              上架
+              提交审核
             </el-button>
             <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
@@ -322,10 +322,10 @@ const handleDelete = async (row) => {
 }
 
 const handleToggleStatus = async (row, status) => {
-  const action = status === 3 ? '下架' : '上架'
+  const action = status === 3 ? '下架' : '提交审核'
   const message = status === 3
     ? '下架后，求职者端将不再展示该职位。'
-    : '上架后，求职者端将重新展示该职位。'
+    : '提交后需要运营或管理员审核通过，职位才会重新展示。'
   try {
     await ElMessageBox.confirm(message, `${action}职位确认`, {
       type: 'warning',
