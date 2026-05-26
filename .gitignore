@@ -16,6 +16,7 @@ job-recruitment-backend/uploads/
 
 # Local IDE/runtime noise
 .idea/
+.qoder/
 *.iml
 
 # OS files
