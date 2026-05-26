@@ -103,7 +103,21 @@
               <span>投递状态分布</span>
             </div>
           </template>
-          <v-chart class="chart" :option="applicationStatusChartOption" autoresize />
+          <div class="print-list">
+            <div
+              v-for="item in applicationStatusRows"
+              :key="item.name"
+              class="print-row"
+            >
+              <div class="print-row-meta">
+                <span class="print-row-name">{{ item.name }}</span>
+                <span class="print-row-value">{{ item.value }} / {{ item.percent }}%</span>
+              </div>
+              <div class="print-track">
+                <div class="print-fill" :style="{ width: item.percent + '%' }"></div>
+              </div>
+            </div>
+          </div>
         </el-card>
       </el-col>
       <el-col :span="12">
@@ -113,7 +127,27 @@
               <span>热门城市TOP10</span>
             </div>
           </template>
-          <v-chart class="chart" :option="cityChartOption" autoresize />
+          <div class="rank-table">
+            <div class="rank-head">
+              <span>排名</span>
+              <span>城市</span>
+              <span>职位数</span>
+              <span>占比</span>
+            </div>
+            <div
+              v-for="item in cityRows"
+              :key="item.city"
+              class="rank-row"
+            >
+              <span class="rank-index">{{ item.rank }}</span>
+              <span class="rank-city">{{ item.city }}</span>
+              <span class="rank-count">{{ item.count }}</span>
+              <span class="rank-percent">{{ item.percent }}%</span>
+              <div class="rank-track">
+                <div class="rank-fill" :style="{ width: item.percent + '%' }"></div>
+              </div>
+            </div>
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -140,6 +174,9 @@ const stats = ref({
   totalJobs: 0,
   totalApplications: 0
 })
+
+const applicationStatusRows = ref([])
+const cityRows = ref([])
 
 // 用户角色分布饼图
 const roleChartOption = ref({
@@ -237,6 +274,27 @@ const cityChartOption = ref({
   }]
 })
 
+const toPercentRows = (items = []) => {
+  const total = items.reduce((sum, item) => sum + Number(item.value || 0), 0)
+  return items.map((item) => ({
+    ...item,
+    percent: total > 0 ? Math.round((Number(item.value || 0) / total) * 100) : 0
+  }))
+}
+
+const toCityRows = (cities = [], counts = []) => {
+  const max = Math.max(...counts.map((count) => Number(count || 0)), 0)
+  return cities.map((city, index) => {
+    const count = Number(counts[index] || 0)
+    return {
+      rank: index + 1,
+      city,
+      count,
+      percent: max > 0 ? Math.round((count / max) * 100) : 0
+    }
+  })
+}
+
 const fetchStats = async () => {
   try {
     const res = await getDashboardStatistics()
@@ -265,11 +323,10 @@ const fetchStats = async () => {
     jobTrendChartOption.value.series[0].data = data.jobTrend.counts
     
     // 更新投递状态分布
-    applicationStatusChartOption.value.series[0].data = data.applicationStatusDistribution
+    applicationStatusRows.value = toPercentRows(data.applicationStatusDistribution || [])
     
     // 更新热门城市
-    cityChartOption.value.yAxis.data = data.topCities.cities
-    cityChartOption.value.series[0].data = data.topCities.counts
+    cityRows.value = toCityRows(data.topCities?.cities || [], data.topCities?.counts || [])
     
   } catch (error) {
     console.error(error)
@@ -351,5 +408,102 @@ onMounted(() => {
 .chart {
   width: 100%;
   height: 320px;
+}
+
+.print-list {
+  padding: 14px 8px 0;
+}
+
+.print-row {
+  margin-bottom: 14px;
+}
+
+.print-row-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 6px;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.print-row-name {
+  font-weight: 600;
+}
+
+.print-row-value {
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.print-track,
+.rank-track {
+  height: 10px;
+  border: 1px solid #111827;
+  background: repeating-linear-gradient(
+    45deg,
+    #fff,
+    #fff 4px,
+    #e5e7eb 4px,
+    #e5e7eb 8px
+  );
+}
+
+.print-fill,
+.rank-fill {
+  height: 100%;
+  background: #111827;
+}
+
+.rank-table {
+  padding-top: 8px;
+  font-size: 14px;
+}
+
+.rank-head,
+.rank-row {
+  display: grid;
+  grid-template-columns: 52px 1fr 72px 64px;
+  gap: 10px;
+  align-items: center;
+}
+
+.rank-head {
+  padding: 8px 0;
+  color: #374151;
+  font-weight: 700;
+  border-bottom: 2px solid #111827;
+}
+
+.rank-row {
+  padding: 8px 0;
+  border-bottom: 1px solid #d1d5db;
+}
+
+.rank-index,
+.rank-count,
+.rank-percent {
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.rank-city {
+  font-weight: 600;
+}
+
+.rank-track {
+  grid-column: 2 / 5;
+  height: 8px;
+}
+
+@media print {
+  .print-track,
+  .rank-track {
+    border-color: #000;
+    background: #fff;
+  }
+
+  .print-fill,
+  .rank-fill {
+    background: #000;
+  }
 }
 </style>
