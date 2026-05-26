@@ -71,6 +71,10 @@
             />
           </el-form-item>
 
+          <div class="form-extra">
+            <el-link type="primary" :underline="false" @click="handleForgotPassword">忘记密码？</el-link>
+          </div>
+
           <el-button
             class="login-submit"
             type="primary"
@@ -173,6 +177,10 @@ const handleLogin = async () => {
 const fillDemoAccount = (account) => {
   form.username = account.username
   form.password = account.password
+}
+
+const handleForgotPassword = () => {
+  ElMessage.warning('忘记密码请联系管理员')
 }
 
 const goHome = () => {
@@ -366,11 +374,18 @@ onMounted(() => {
 .login-submit {
   width: 100%;
   height: 46px;
-  margin-top: 6px;
+  margin-top: 8px;
   border: 0;
   border-radius: 8px;
   background: #0f766e;
   font-weight: 700;
+}
+
+.form-extra {
+  display: flex;
+  justify-content: flex-end;
+  margin: -6px 0 6px;
+  font-size: 14px;
 }
 
 .login-submit:hover,

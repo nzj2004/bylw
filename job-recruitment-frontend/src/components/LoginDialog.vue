@@ -27,6 +27,10 @@
           @keyup.enter="handleLogin"
         />
       </el-form-item>
+
+      <div class="form-extra">
+        <el-link type="primary" :underline="false" @click="handleForgotPassword">忘记密码？</el-link>
+      </div>
       
       <el-form-item>
         <el-button 
@@ -120,6 +124,10 @@ const goToRegister = () => {
 }
 
 // 暴露方法给父组件
+const handleForgotPassword = () => {
+  ElMessage.warning('忘记密码请联系管理员')
+}
+
 defineExpose({
   show
 })
@@ -130,5 +138,11 @@ defineExpose({
   text-align: center;
   margin-top: 16px;
   color: #606266;
+}
+
+.form-extra {
+  display: flex;
+  justify-content: flex-end;
+  margin: -8px 0 12px;
 }
 </style>
