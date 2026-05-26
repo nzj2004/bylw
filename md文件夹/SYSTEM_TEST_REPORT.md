@@ -24,9 +24,9 @@
 ### 1.3 测试数据
 使用 `insert_test_data.sql` 初始化测试数据，包含：
 - **管理员账号**: admin / admin123
-- **运营账号**: operator / admin123
-- **企业账号**: alibaba / admin123, tencent / admin123, baidu / admin123
-- **求职者账号**: zhangsan / admin123, lisi / admin123, wangwu / admin123
+- **运营账号**: operator / Op@2026
+- **企业账号**: alibaba / Ali@2026, tencent / Ten@2026, baidu / Baidu@2026
+- **求职者账号**: zhangsan / Zhang@2026, lisi / Lisi@2026, wangwu / Wang@2026, zhouhao / Zhou@2026
 
 ---
 
@@ -448,13 +448,14 @@ server: {
 | 角色 | 用户名 | 密码 | 用途 |
 |------|--------|------|------|
 | 管理员 | admin | admin123 | 系统管理、用户管理 |
-| 运营 | operator | admin123 | 企业审核、职位审核 |
-| 企业 | alibaba | admin123 | 阿里巴巴HR |
-| 企业 | tencent | admin123 | 腾讯HR |
-| 企业 | baidu | admin123 | 百度HR |
-| 求职者 | zhangsan | admin123 | 张三（浙大计算机） |
-| 求职者 | lisi | admin123 | 李四（深大软件工程） |
-| 求职者 | wangwu | admin123 | 王五（清华人工智能） |
+| 运营 | operator | Op@2026 | 企业审核、职位审核 |
+| 企业 | alibaba | Ali@2026 | 阿里巴巴HR |
+| 企业 | tencent | Ten@2026 | 腾讯HR |
+| 企业 | baidu | Baidu@2026 | 百度HR |
+| 求职者 | zhangsan | Zhang@2026 | 张三（浙大计算机） |
+| 求职者 | lisi | Lisi@2026 | 李四（深大软件工程） |
+| 求职者 | wangwu | Wang@2026 | 王五（清华人工智能） |
+| 求职者 | zhouhao | Zhou@2026 | 周昊（面试/Offer流程样例） |
 
 ### 9.3 API接口文档
 详见项目 README.md 中的 API 接口列表。

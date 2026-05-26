@@ -5,6 +5,10 @@ node_modules/
 dist/
 target/
 
+# Runtime uploads
+uploads/
+job-recruitment-backend/uploads/
+
 # Runtime logs
 *.log
 *.err

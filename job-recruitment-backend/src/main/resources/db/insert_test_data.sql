@@ -1,13 +1,24 @@
 -- Clean deterministic demo data for the recruitment system.
 -- WARNING: this seed script resets demo business data.
 -- For fixing the current database without deleting existing rows, use repair_seed_chinese_data.sql.
--- All seeded accounts use password: admin123.
+-- Seeded account passwords:
+-- admin/admin123, operator/Op@2026, alibaba/Ali@2026, tencent/Ten@2026,
+-- baidu/Baidu@2026, zhangsan/Zhang@2026, lisi/Lisi@2026, wangwu/Wang@2026,
+-- zhouhao/Zhou@2026.
 
 USE job_recruitment;
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-SET @pwd := '$2a$10$xmkvm/L3VkUvz15CwCQoneOXRXMU0uQcrx78Hkced77csCfYZHU86';
+SET @pwd_admin := '$2a$10$xmkvm/L3VkUvz15CwCQoneOXRXMU0uQcrx78Hkced77csCfYZHU86';
+SET @pwd_operator := '$2a$10$8620HBKFkfeR6euYIMP08eFAY7HBy85nc/td39aB.s71uhhyqdlMC';
+SET @pwd_alibaba := '$2a$10$5UzSwoxYLpqTPpOIopDY6O3p2Wpfiv6O8F32LF5zjy5qsVZHC013u';
+SET @pwd_tencent := '$2a$10$0R45Wk2smB08UrhHx3mdAuPltMQ98Hnj6ezH/uzeohaaH8CM4cQFy';
+SET @pwd_baidu := '$2a$10$Et.n.S1O6M/jW81LG5HWbeLp2R9fj717Vp704jX6KngcLwqq2g1za';
+SET @pwd_zhangsan := '$2a$10$JMDVsLwm2vA2RptKmtiZXeT/agrtiMCYOPUdE3OLd2.m0F7MWUcca';
+SET @pwd_lisi := '$2a$10$mfY.ow5dYwE0u78QPAQjgeibDuaFs5tYh3BQSK9gESMTSsV4njOIO';
+SET @pwd_wangwu := '$2a$10$9eG11smomVYL5fxTTvPpS.UOKyVpAuWPAHEb13VAQhFR17n9m01yW';
+SET @pwd_zhouhao := '$2a$10$nxOCUnSAuC0aYhoOS1SL5.P4QF3qJyHP/OVs64uOvMOLBOMfPymge';
 
 -- Keep the script runnable on both old and new schemas.
 SET @col_count := (SELECT COUNT(1) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'application' AND COLUMN_NAME = 'viewed_at');
@@ -134,19 +145,19 @@ DELETE FROM sys_user WHERE role IN (3, 4);
 
 INSERT INTO sys_user (username, password, real_name, email, phone, role, status, deleted)
 VALUES
-('admin', @pwd, 'System Admin', 'admin@job.com', '13800138000', 1, 1, 0),
-('operator', @pwd, 'Platform Operator', 'operator@job.com', '13800138001', 2, 1, 0)
+('admin', @pwd_admin, 'System Admin', 'admin@job.com', '13800138000', 1, 1, 0),
+('operator', @pwd_operator, 'Platform Operator', 'operator@job.com', '13800138001', 2, 1, 0)
 ON DUPLICATE KEY UPDATE password = VALUES(password), real_name = VALUES(real_name), email = VALUES(email), phone = VALUES(phone), role = VALUES(role), status = VALUES(status), deleted = 0;
 
 INSERT INTO sys_user (username, password, real_name, email, phone, role, status, deleted)
 VALUES
-('alibaba', @pwd, 'Alibaba HR', 'hr@alibaba.com', '13800138002', 3, 1, 0),
-('tencent', @pwd, 'Tencent HR', 'hr@tencent.com', '13800138003', 3, 1, 0),
-('baidu', @pwd, 'Baidu HR', 'hr@baidu.com', '13800138004', 3, 1, 0),
-('zhangsan', @pwd, 'Zhang San', 'zhangsan@qq.com', '13800138005', 4, 1, 0),
-('lisi', @pwd, 'Li Si', 'lisi@qq.com', '13800138006', 4, 1, 0),
-('wangwu', @pwd, 'Wang Wu', 'wangwu@qq.com', '13800138007', 4, 1, 0),
-('zhouhao', @pwd, 'Zhou Hao', 'zhouhao@qq.com', '13800138008', 4, 1, 0);
+('alibaba', @pwd_alibaba, 'Alibaba HR', 'hr@alibaba.com', '13800138002', 3, 1, 0),
+('tencent', @pwd_tencent, 'Tencent HR', 'hr@tencent.com', '13800138003', 3, 1, 0),
+('baidu', @pwd_baidu, 'Baidu HR', 'hr@baidu.com', '13800138004', 3, 1, 0),
+('zhangsan', @pwd_zhangsan, 'Zhang San', 'zhangsan@qq.com', '13800138005', 4, 1, 0),
+('lisi', @pwd_lisi, 'Li Si', 'lisi@qq.com', '13800138006', 4, 1, 0),
+('wangwu', @pwd_wangwu, 'Wang Wu', 'wangwu@qq.com', '13800138007', 4, 1, 0),
+('zhouhao', @pwd_zhouhao, 'Zhou Hao', 'zhouhao@qq.com', '13800138008', 4, 1, 0);
 
 SELECT id INTO @alibaba_user_id FROM sys_user WHERE username = 'alibaba';
 SELECT id INTO @tencent_user_id FROM sys_user WHERE username = 'tencent';

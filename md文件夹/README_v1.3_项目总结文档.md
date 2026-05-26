@@ -245,7 +245,7 @@ Offer状态：
 - `add_company_pending_review_fields.sql` 用于给 `company_info` 增加企业资料重审所需的 `pending_*` 字段。
 - `adjust_company_audit_demo_data.sql` 用于保留企业审核演示数据：4 家待审核、4 家未通过，并把对应 16 个岗位下架。
 - 首页“热门职位”使用独立接口 `/api/job/hot`，按投递数、浏览数、发布时间倒序展示，不再等同于普通职位列表第一页。
-- 新增求职者测试账号：`zhouhao / admin123`，真实姓名“周昊”。
+- 新增求职者测试账号：`zhouhao / Zhou@2026`，真实姓名“周昊”。
 - 周昊账号包含待查看、面试中、面试通过、Offer待确认、Offer已接受、Offer已过期等投递样例，便于验证投递记录、Offer页面和状态时间线。
 - 脚本会创建并填充 `interview_rounds`、`offers`、`application_status_history`、`user_notification`，并回写职位投递数。
 - 当前数据库已验证：周昊通知 4 条、未读 3 条、状态历史 16 条、Offer 3 条，职位与Offer薪资均按 K 单位存储。

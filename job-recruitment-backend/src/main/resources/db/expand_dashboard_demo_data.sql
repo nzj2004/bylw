@@ -8,7 +8,8 @@
 USE job_recruitment;
 SET NAMES utf8mb4;
 
-SET @password_hash = '$2a$10$xmkvm/L3VkUvz15CwCQoneOXRXMU0uQcrx78Hkced77csCfYZHU86';
+SET @generated_password_hash = '$2a$10$Hj/DVWlYj5Z0Te/ewretruyBqNjwVybks2uJ0xhxklW6NTTZn.nam'; -- User@2026
+SET @pwd_ops_zhaomin = '$2a$10$7Qleg79BKkft/1rr14b1..Ldz1MdEEGgAWsn41HjjXdD.yuxGi9I6'; -- OpsZhao@2026
 
 CREATE TEMPORARY TABLE IF NOT EXISTS tmp_digit (n INT PRIMARY KEY);
 TRUNCATE TABLE tmp_digit;
@@ -30,7 +31,7 @@ UPDATE sys_user SET real_name = '陈思远', email = 'operator@job.com', phone =
 UPDATE sys_user SET real_name = '刘云', email = 'liuyun.ops@job.com', phone = '13800138002' WHERE username = 'yunying' AND role = 2;
 
 INSERT INTO sys_user (username, password, real_name, email, phone, role, status, deleted)
-SELECT 'ops_zhaomin', @password_hash, '赵敏', 'zhaomin.ops@job.com', '13800138003', 2, 1, 0
+SELECT 'ops_zhaomin', @pwd_ops_zhaomin, '赵敏', 'zhaomin.ops@job.com', '13800138003', 2, 1, 0
 WHERE (SELECT COUNT(1) FROM sys_user WHERE role = 2 AND deleted = 0) < 3
   AND NOT EXISTS (SELECT 1 FROM sys_user WHERE username = 'ops_zhaomin');
 
@@ -109,7 +110,7 @@ WHERE n <= 577;
 INSERT INTO sys_user (username, password, real_name, email, phone, role, status, deleted)
 SELECT
     s.username,
-    @password_hash,
+    @generated_password_hash,
     CONCAT(LEFT(s.company_name, 12), 'HR'),
     CONCAT(s.username, '@demo-company.test'),
     CONCAT('139', LPAD(s.seq, 8, '0')),
@@ -153,7 +154,7 @@ WHERE c.deleted = 0;
 INSERT INTO sys_user (username, password, real_name, email, phone, role, status, deleted)
 SELECT
     CONCAT('candidate', LPAD(n, 4, '0')),
-    @password_hash,
+    @generated_password_hash,
     CONCAT(
         ELT(1 + MOD(n, 50), '赵','钱','孙','李','周','吴','郑','王','冯','陈','褚','卫','蒋','沈','韩','杨','朱','秦','尤','许','何','吕','施','张','孔','曹','严','华','金','魏','陶','姜','戚','谢','邹','喻','柏','水','窦','章','云','苏','潘','葛','奚','范','彭','郎','鲁','韦'),
         ELT(1 + MOD(FLOOR(n / 50), 30), '晨','雨','子','思','嘉','浩','雅','若','明','俊','欣','佳','梓','宇','一','书','文','泽','安','启','星','语','昕','睿','静','雪','博','宁','清','航'),

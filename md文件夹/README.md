@@ -1204,14 +1204,14 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
 | 角色 | 用户名 | 密码 |
 |------|--------|------|
 | 管理员 | admin | admin123 |
-| 运营 | operator | admin123 |
-| 企业-阿里巴巴 | alibaba | admin123 |
-| 企业-腾讯 | tencent | admin123 |
-| 企业-百度 | baidu | admin123 |
-| 求职者-张三 | zhangsan | admin123 |
-| 求职者-李四 | lisi | admin123 |
-| 求职者-王五 | wangwu | admin123 |
-| 求职者-周昊 | zhouhao | admin123 |
+| 运营 | operator | Op@2026 |
+| 企业-阿里巴巴 | alibaba | Ali@2026 |
+| 企业-腾讯 | tencent | Ten@2026 |
+| 企业-百度 | baidu | Baidu@2026 |
+| 求职者-张三 | zhangsan | Zhang@2026 |
+| 求职者-李四 | lisi | Lisi@2026 |
+| 求职者-王五 | wangwu | Wang@2026 |
+| 求职者-周昊 | zhouhao | Zhou@2026 |
 
 ## 测试数据脚本说明
 

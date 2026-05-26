@@ -188,8 +188,8 @@ CREATE TABLE IF NOT EXISTS job_favorite (
     INDEX idx_job_id (job_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='收藏岗位表';
 
--- 初始化管理员账号（密码：admin123）
--- 使用 BCrypt 加密后的密码：admin123
+-- 初始化管理员与运营账号
+-- 管理员密码：admin123；运营密码：Op@2026
 INSERT INTO sys_user (username, password, real_name, email, phone, role, status) VALUES
 ('admin', '$2a$10$xmkvm/L3VkUvz15CwCQoneOXRXMU0uQcrx78Hkced77csCfYZHU86', '系统管理员', 'admin@job.com', '13800138000', 1, 1),
-('operator', '$2a$10$xmkvm/L3VkUvz15CwCQoneOXRXMU0uQcrx78Hkced77csCfYZHU86', '运营人员', 'operator@job.com', '13800138001', 2, 1);
+('operator', '$2a$10$8620HBKFkfeR6euYIMP08eFAY7HBy85nc/td39aB.s71uhhyqdlMC', '运营人员', 'operator@job.com', '13800138001', 2, 1);
