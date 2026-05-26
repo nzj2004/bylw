@@ -28,7 +28,7 @@ public interface JobMapper extends BaseMapper<Job> {
      */
     @Select("SELECT DISTINCT j.id FROM job_info j " +
             "LEFT JOIN company_info c ON j.company_id = c.id " +
-            "WHERE j.deleted = 0 AND j.status = 1 " +
+            "WHERE j.deleted = 0 " +
             "AND (j.title LIKE CONCAT('%', #{keyword}, '%') " +
             "OR j.job_desc LIKE CONCAT('%', #{keyword}, '%') " +
             "OR c.company_name LIKE CONCAT('%', #{keyword}, '%'))")

@@ -162,7 +162,15 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements JobSe
         
         // 鍏抽敭瀛楁悳绱?
         if (StringUtils.hasText(keyword)) {
-            wrapper.like(Job::getTitle, keyword);
+            Company company = companyMapper.selectById(companyId);
+            boolean companyNameMatched = company != null
+                    && company.getCompanyName() != null
+                    && company.getCompanyName().contains(keyword);
+            if (!companyNameMatched) {
+                wrapper.and(w -> w.like(Job::getTitle, keyword)
+                        .or()
+                        .like(Job::getJobDesc, keyword));
+            }
         }
         
         // 鍒嗙被绛涢€夛紙鏀寔澶х被鍜屽瓙绫伙級
