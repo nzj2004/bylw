@@ -9,7 +9,6 @@ import com.recruitment.entity.Job;
 import com.recruitment.mapper.CompanyMapper;
 import com.recruitment.mapper.JobMapper;
 import com.recruitment.utils.JobCategoryResolver;
-import com.recruitment.utils.SecurityUtil;
 import com.recruitment.service.JobService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,7 +70,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements JobSe
     public Result<PageResult<JobDTO>> listJobs(String keyword, String category, String city,
                                                 String experience, String education,
                                                 Integer minSalary, Integer maxSalary,
-                                                Integer status, Long current, Long size) {
+                                                Integer status, Boolean includeAll, Long current, Long size) {
         LambdaQueryWrapper<Job> wrapper = new LambdaQueryWrapper<>();
 
         // 濡傛灉鏈夊叧閿瓧锛屼娇鐢ㄨ仈琛ㄦ煡璇㈡悳绱㈣亴浣嶆爣棰樸€佹弿杩板拰鍏徃鍚嶇О
@@ -120,11 +119,8 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, Job> implements JobSe
         }
         if (status != null) {
             wrapper.eq(Job::getStatus, status);
-        } else {
-            Integer role = SecurityUtil.getCurrentRole();
-            if (role == null || (role != 1 && role != 2)) {
-                wrapper.eq(Job::getStatus, Job.STATUS_PUBLISHED);
-            }
+        } else if (!Boolean.TRUE.equals(includeAll)) {
+            wrapper.eq(Job::getStatus, Job.STATUS_PUBLISHED);
         }
 
         wrapper.orderByDesc(Job::getPublishTime, Job::getCreateTime);

@@ -45,7 +45,7 @@
             </el-select>
           </el-col>
 
-          <el-col :span="3">
+          <el-col :span="2">
             <el-select
               v-model="searchForm.experience"
               placeholder="经验要求"
@@ -59,7 +59,7 @@
             </el-select>
           </el-col>
 
-          <el-col :span="3">
+          <el-col :span="2">
             <el-select
               v-model="searchForm.education"
               placeholder="学历要求"
@@ -71,6 +71,10 @@
               <el-option label="本科" value="本科" />
               <el-option label="硕士" value="硕士" />
             </el-select>
+          </el-col>
+
+          <el-col :span="2">
+            <el-button type="primary" class="search-button" @click="handleSearch">搜索</el-button>
           </el-col>
         </el-row>
       </el-card>
@@ -262,6 +266,10 @@ watch(
 
 .search-section {
   margin-bottom: 20px;
+}
+
+.search-button {
+  width: 100%;
 }
 
 .job-list {

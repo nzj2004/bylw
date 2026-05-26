@@ -19,7 +19,7 @@ public interface JobService extends IService<Job> {
     Result<PageResult<JobDTO>> listJobs(String keyword, String category, String city, 
                                          String experience, String education,
                                          Integer minSalary, Integer maxSalary, 
-                                         Integer status, Long current, Long size);
+                                         Integer status, Boolean includeAll, Long current, Long size);
 
     Result<PageResult<JobDTO>> listHotJobs(Long current, Long size);
 

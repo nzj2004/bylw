@@ -89,9 +89,10 @@ public class JobController {
             @RequestParam(required = false) Integer minSalary,
             @RequestParam(required = false) Integer maxSalary,
             @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) Boolean includeAll,
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size) {
-        return jobService.listJobs(keyword, category, city, experience, education, minSalary, maxSalary, status, current, size);
+        return jobService.listJobs(keyword, category, city, experience, education, minSalary, maxSalary, status, includeAll, current, size);
     }
 
     @GetMapping("/hot")

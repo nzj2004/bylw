@@ -163,7 +163,8 @@ const fetchJobs = async () => {
       keyword: searchForm.keyword || undefined,
       category: category || undefined,
       city: searchForm.city || undefined,
-      status: searchForm.status !== null ? searchForm.status : undefined
+      status: searchForm.status !== null ? searchForm.status : undefined,
+      includeAll: searchForm.status === null ? true : undefined
     })
     jobList.value = res.data.records
     pagination.total = res.data.total

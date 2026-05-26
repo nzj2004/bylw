@@ -132,6 +132,8 @@ const fetchJobs = async () => {
     }
     if (filterStatus.value !== null) {
       params.status = filterStatus.value
+    } else {
+      params.includeAll = true
     }
     const res = await listJobs(params)
     jobs.value = res.data.records || []
