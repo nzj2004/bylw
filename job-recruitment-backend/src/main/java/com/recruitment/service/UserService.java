@@ -21,4 +21,6 @@ public interface UserService extends IService<User> {
     Result<Boolean> deleteUser(Long id);
 
     Result<Boolean> resetPassword(Long id);
+
+    Result<Boolean> changePassword(Long userId, ChangePasswordDTO changePasswordDTO);
 }

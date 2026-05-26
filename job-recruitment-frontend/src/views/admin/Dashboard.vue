@@ -156,7 +156,7 @@ const chartDecals = [
 ]
 
 const withPrintableStyle = (items = []) => items.map((item, index) => ({
-  ...item,
+  ...(typeof item === 'object' && item !== null ? item : { value: item }),
   itemStyle: {
     color: chartColors[index % chartColors.length],
     decal: {

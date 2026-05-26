@@ -241,6 +241,43 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return Result.success(true);
     }
 
+    @Override
+    public Result<Boolean> changePassword(Long userId, ChangePasswordDTO changePasswordDTO) {
+        if (userId == null) {
+            return Result.error("用户未登录");
+        }
+        if (changePasswordDTO == null) {
+            return Result.error("密码信息不能为空");
+        }
+        if (!StringUtils.hasText(changePasswordDTO.getOldPassword())) {
+            return Result.error("原密码不能为空");
+        }
+        if (!StringUtils.hasText(changePasswordDTO.getNewPassword())) {
+            return Result.error("新密码不能为空");
+        }
+        if (changePasswordDTO.getNewPassword().length() < 6) {
+            return Result.error("新密码至少6位");
+        }
+        if (!changePasswordDTO.getNewPassword().equals(changePasswordDTO.getConfirmPassword())) {
+            return Result.error("两次输入的新密码不一致");
+        }
+
+        User user = baseMapper.selectById(userId);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+        if (!passwordEncoder.matches(changePasswordDTO.getOldPassword(), user.getPassword())) {
+            return Result.error("原密码错误");
+        }
+        if (passwordEncoder.matches(changePasswordDTO.getNewPassword(), user.getPassword())) {
+            return Result.error("新密码不能与原密码相同");
+        }
+
+        user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
+        baseMapper.updateById(user);
+        return Result.success(true);
+    }
+
     private UserDTO convertToDTO(User user) {
         UserDTO dto = new UserDTO();
         BeanUtils.copyProperties(user, dto);

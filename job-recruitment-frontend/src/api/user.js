@@ -24,6 +24,10 @@ export const resetPassword = (id) => {
   return request.put(`/user/${id}/reset-password`)
 }
 
+export const changePassword = (data) => {
+  return request.put('/user/password', data)
+}
+
 // ========== 企业信息相关 API ==========
 
 export const getCompanyInfo = () => {

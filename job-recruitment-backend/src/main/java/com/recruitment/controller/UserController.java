@@ -150,6 +150,13 @@ public class UserController {
         return userService.resetPassword(id);
     }
 
+    @PutMapping("/password")
+    @PreAuthorize("hasAnyRole('USER', 'COMPANY', 'ADMIN', 'OPERATOR')")
+    public Result<Boolean> changePassword(@RequestBody ChangePasswordDTO changePasswordDTO) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        return userService.changePassword(userId, changePasswordDTO);
+    }
+
     // ========== 企业信息相关 API ==========
 
     @GetMapping("/company/info")
