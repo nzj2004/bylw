@@ -103,21 +103,7 @@
               <span>投递状态分布</span>
             </div>
           </template>
-          <div class="print-list">
-            <div
-              v-for="item in applicationStatusRows"
-              :key="item.name"
-              class="print-row"
-            >
-              <div class="print-row-meta">
-                <span class="print-row-name">{{ item.name }}</span>
-                <span class="print-row-value">{{ item.value }} / {{ item.percent }}%</span>
-              </div>
-              <div class="print-track">
-                <div class="print-fill" :style="{ width: item.percent + '%' }"></div>
-              </div>
-            </div>
-          </div>
+          <v-chart class="chart" :option="applicationStatusChartOption" autoresize />
         </el-card>
       </el-col>
       <el-col :span="12">
@@ -127,27 +113,7 @@
               <span>热门城市TOP10</span>
             </div>
           </template>
-          <div class="rank-table">
-            <div class="rank-head">
-              <span>排名</span>
-              <span>城市</span>
-              <span>职位数</span>
-              <span>占比</span>
-            </div>
-            <div
-              v-for="item in cityRows"
-              :key="item.city"
-              class="rank-row"
-            >
-              <span class="rank-index">{{ item.rank }}</span>
-              <span class="rank-city">{{ item.city }}</span>
-              <span class="rank-count">{{ item.count }}</span>
-              <span class="rank-percent">{{ item.percent }}%</span>
-              <div class="rank-track">
-                <div class="rank-fill" :style="{ width: item.percent + '%' }"></div>
-              </div>
-            </div>
-          </div>
+          <v-chart class="chart" :option="cityChartOption" autoresize />
         </el-card>
       </el-col>
     </el-row>
@@ -175,8 +141,33 @@ const stats = ref({
   totalApplications: 0
 })
 
-const applicationStatusRows = ref([])
-const cityRows = ref([])
+const chartColors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc', '#6b7280']
+const chartDecals = [
+  { symbol: 'rect', dashArrayX: [1, 0], dashArrayY: [6, 3], rotation: 0 },
+  { symbol: 'rect', dashArrayX: [6, 3], dashArrayY: [1, 0], rotation: 0 },
+  { symbol: 'rect', dashArrayX: [1, 0], dashArrayY: [5, 3], rotation: Math.PI / 4 },
+  { symbol: 'circle', dashArrayX: [1, 0], dashArrayY: [5, 5], symbolSize: 1.5 },
+  { symbol: 'triangle', dashArrayX: [1, 0], dashArrayY: [6, 6], symbolSize: 2 },
+  { symbol: 'diamond', dashArrayX: [1, 0], dashArrayY: [6, 6], symbolSize: 2 },
+  { symbol: 'rect', dashArrayX: [8, 4], dashArrayY: [8, 4], rotation: Math.PI / 4 },
+  { symbol: 'circle', dashArrayX: [2, 4], dashArrayY: [2, 4], symbolSize: 2 },
+  { symbol: 'rect', dashArrayX: [2, 3], dashArrayY: [8, 2], rotation: 0 },
+  { symbol: 'triangle', dashArrayX: [4, 4], dashArrayY: [4, 4], rotation: Math.PI / 6 }
+]
+
+const withPrintableStyle = (items = []) => items.map((item, index) => ({
+  ...item,
+  itemStyle: {
+    color: chartColors[index % chartColors.length],
+    decal: {
+      color: 'rgba(17, 24, 39, 0.28)',
+      backgroundColor: 'transparent',
+      ...chartDecals[index % chartDecals.length]
+    },
+    borderColor: '#111827',
+    borderWidth: 1.5
+  }
+}))
 
 // 用户角色分布饼图
 const roleChartOption = ref({
@@ -243,11 +234,27 @@ const jobTrendChartOption = ref({
 // 投递状态分布饼图
 const applicationStatusChartOption = ref({
   tooltip: { trigger: 'item' },
-  legend: { bottom: '5%', left: 'center' },
+  legend: { bottom: 0, left: 'center', itemWidth: 18, itemHeight: 12 },
   series: [{
     type: 'pie',
-    radius: ['40%', '70%'],
-    itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+    radius: ['28%', '66%'],
+    center: ['50%', '43%'],
+    roseType: 'radius',
+    label: {
+      show: true,
+      color: '#1f2937',
+      fontWeight: 600,
+      formatter: '{b}\n{c} ({d}%)'
+    },
+    labelLine: {
+      length: 12,
+      length2: 10,
+      lineStyle: { color: '#6b7280' }
+    },
+    emphasis: {
+      scaleSize: 8,
+      label: { fontWeight: 700 }
+    },
     data: []
   }]
 })
@@ -255,45 +262,31 @@ const applicationStatusChartOption = ref({
 // 热门城市TOP10柱状图
 const cityChartOption = ref({
   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-  xAxis: { type: 'value' },
-  yAxis: { type: 'category', data: [] },
+  grid: { left: '4%', right: '12%', top: '8%', bottom: '6%', containLabel: true },
+  xAxis: {
+    type: 'value',
+    splitLine: { lineStyle: { type: 'dashed', color: '#d1d5db' } }
+  },
+  yAxis: {
+    type: 'category',
+    data: [],
+    inverse: true,
+    axisTick: { show: false },
+    axisLabel: { color: '#1f2937', fontWeight: 600 }
+  },
   series: [{
     type: 'bar',
+    barWidth: 16,
     data: [],
-    itemStyle: {
-      color: {
-        type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
-        colorStops: [
-          { offset: 0, color: '#91cc75' },
-          { offset: 1, color: '#5470c6' }
-        ]
-      },
-      borderRadius: [0, 5, 5, 0]
+    label: {
+      show: true,
+      position: 'right',
+      color: '#111827',
+      fontWeight: 700,
+      formatter: '{c}'
     }
   }]
 })
-
-const toPercentRows = (items = []) => {
-  const total = items.reduce((sum, item) => sum + Number(item.value || 0), 0)
-  return items.map((item) => ({
-    ...item,
-    percent: total > 0 ? Math.round((Number(item.value || 0) / total) * 100) : 0
-  }))
-}
-
-const toCityRows = (cities = [], counts = []) => {
-  const max = Math.max(...counts.map((count) => Number(count || 0)), 0)
-  return cities.map((city, index) => {
-    const count = Number(counts[index] || 0)
-    return {
-      rank: index + 1,
-      city,
-      count,
-      percent: max > 0 ? Math.round((count / max) * 100) : 0
-    }
-  })
-}
 
 const fetchStats = async () => {
   try {
@@ -323,10 +316,11 @@ const fetchStats = async () => {
     jobTrendChartOption.value.series[0].data = data.jobTrend.counts
     
     // 更新投递状态分布
-    applicationStatusRows.value = toPercentRows(data.applicationStatusDistribution || [])
+    applicationStatusChartOption.value.series[0].data = withPrintableStyle(data.applicationStatusDistribution || [])
     
     // 更新热门城市
-    cityRows.value = toCityRows(data.topCities?.cities || [], data.topCities?.counts || [])
+    cityChartOption.value.yAxis.data = data.topCities?.cities || []
+    cityChartOption.value.series[0].data = withPrintableStyle((data.topCities?.counts || []).map((count) => Number(count || 0)))
     
   } catch (error) {
     console.error(error)
@@ -410,100 +404,4 @@ onMounted(() => {
   height: 320px;
 }
 
-.print-list {
-  padding: 14px 8px 0;
-}
-
-.print-row {
-  margin-bottom: 14px;
-}
-
-.print-row-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 6px;
-  color: #1f2937;
-  font-size: 14px;
-}
-
-.print-row-name {
-  font-weight: 600;
-}
-
-.print-row-value {
-  font-family: Consolas, "Courier New", monospace;
-}
-
-.print-track,
-.rank-track {
-  height: 10px;
-  border: 1px solid #111827;
-  background: repeating-linear-gradient(
-    45deg,
-    #fff,
-    #fff 4px,
-    #e5e7eb 4px,
-    #e5e7eb 8px
-  );
-}
-
-.print-fill,
-.rank-fill {
-  height: 100%;
-  background: #111827;
-}
-
-.rank-table {
-  padding-top: 8px;
-  font-size: 14px;
-}
-
-.rank-head,
-.rank-row {
-  display: grid;
-  grid-template-columns: 52px 1fr 72px 64px;
-  gap: 10px;
-  align-items: center;
-}
-
-.rank-head {
-  padding: 8px 0;
-  color: #374151;
-  font-weight: 700;
-  border-bottom: 2px solid #111827;
-}
-
-.rank-row {
-  padding: 8px 0;
-  border-bottom: 1px solid #d1d5db;
-}
-
-.rank-index,
-.rank-count,
-.rank-percent {
-  font-family: Consolas, "Courier New", monospace;
-}
-
-.rank-city {
-  font-weight: 600;
-}
-
-.rank-track {
-  grid-column: 2 / 5;
-  height: 8px;
-}
-
-@media print {
-  .print-track,
-  .rank-track {
-    border-color: #000;
-    background: #fff;
-  }
-
-  .print-fill,
-  .rank-fill {
-    background: #000;
-  }
-}
 </style>
