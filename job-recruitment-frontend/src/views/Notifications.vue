@@ -8,7 +8,13 @@
         </div>
       </template>
 
-      <el-table :data="notifications" stripe v-loading="loading">
+      <el-table
+        class="notification-table"
+        :data="notifications"
+        stripe
+        v-loading="loading"
+        @row-click="handleView"
+      >
         <el-table-column label="状态" width="80">
           <template #default="{ row }">
             <el-tag :type="row.readStatus === 0 ? 'danger' : 'info'">
@@ -20,9 +26,10 @@
         <el-table-column prop="content" label="内容" min-width="360" show-overflow-tooltip />
         <el-table-column prop="notificationType" label="类型" width="110" />
         <el-table-column prop="createTime" label="时间" width="170" />
-        <el-table-column label="操作" width="110">
+        <el-table-column label="操作" width="170">
           <template #default="{ row }">
-            <el-button size="small" :disabled="row.readStatus !== 0" @click="handleMarkRead(row)">标记已读</el-button>
+            <el-button type="primary" size="small" @click.stop="handleView(row)">查看</el-button>
+            <el-button size="small" :disabled="row.readStatus !== 0" @click.stop="handleMarkRead(row)">已读</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -34,11 +41,15 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useUserStore } from '../store/user'
 import { getNotifications, markAllNotificationsRead, markNotificationRead } from '../api/user'
 
 const notifications = ref([])
 const loading = ref(false)
+const router = useRouter()
+const userStore = useUserStore()
 
 const unreadCount = computed(() => notifications.value.filter(item => item.readStatus === 0).length)
 
@@ -61,6 +72,47 @@ const fetchNotifications = async () => {
   }
 }
 
+const getNotificationTarget = (row) => {
+  const businessType = String(row?.businessType || row?.notificationType || '').toUpperCase()
+  const businessId = row?.businessId
+
+  if (businessType === 'JOB' && businessId) {
+    if (userStore.isCompany) {
+      return '/company/jobs'
+    }
+    if (userStore.isAdmin) {
+      return '/admin/jobs'
+    }
+    if (userStore.isOperator) {
+      return '/operator/jobs'
+    }
+    return `/job/${businessId}`
+  }
+
+  if (businessType === 'APPLICATION' && businessId) {
+    if (userStore.isCompany) {
+      return `/company/applications/${businessId}/process`
+    }
+    if (userStore.isUser) {
+      return {
+        path: '/applications',
+        query: { applicationId: businessId }
+      }
+    }
+    return '/admin/jobs'
+  }
+
+  if (businessType === 'OFFER') {
+    return userStore.isCompany ? '/company/applications' : '/offers'
+  }
+
+  if (businessType === 'INTERVIEW') {
+    return userStore.isCompany ? '/company/applications' : '/applications'
+  }
+
+  return null
+}
+
 const handleMarkRead = async (row) => {
   if (!row?.id) {
     return
@@ -68,6 +120,30 @@ const handleMarkRead = async (row) => {
   await markNotificationRead(row.id)
   ElMessage.success('已标记为已读')
   await fetchNotifications()
+}
+
+const markReadSilently = async (row) => {
+  if (!row?.id || row.readStatus !== 0) {
+    return
+  }
+  await markNotificationRead(row.id)
+  row.readStatus = 1
+}
+
+const handleView = async (row) => {
+  const target = getNotificationTarget(row)
+  if (!target) {
+    ElMessage.info('该通知暂无可跳转的详情页')
+    return
+  }
+
+  try {
+    await markReadSilently(row)
+    await router.push(target)
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('打开通知详情失败')
+  }
 }
 
 const handleMarkAllRead = async () => {
@@ -95,5 +171,9 @@ onMounted(() => {
 
 .page-header h3 {
   margin: 0;
+}
+
+.notification-table :deep(.el-table__row) {
+  cursor: pointer;
 }
 </style>

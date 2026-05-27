@@ -200,7 +200,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   getUserApplications,
@@ -213,8 +214,10 @@ import {
 
 const applications = ref([])
 const loading = ref(false)
+const route = useRoute()
 const progressDialogVisible = ref(false)
 const progressLoading = ref(false)
+const openedRouteApplicationId = ref(null)
 
 const selectedApplication = ref(null)
 const interviewRounds = ref([])
@@ -294,6 +297,7 @@ const fetchApplications = async () => {
     offersByApplicationId.value = {}
   } finally {
     loading.value = false
+    await openRouteApplication()
   }
 }
 
@@ -323,6 +327,21 @@ const openProgress = async (row) => {
   selectedOffer.value = offersByApplicationId.value[row.id] || null
   progressDialogVisible.value = true
   await fetchProgress(row.id)
+}
+
+const openRouteApplication = async () => {
+  const applicationId = Number(route.query.applicationId)
+  if (!Number.isFinite(applicationId) || openedRouteApplicationId.value === applicationId) {
+    return
+  }
+
+  const target = applications.value.find(item => Number(item.id) === applicationId)
+  if (!target) {
+    return
+  }
+
+  openedRouteApplicationId.value = applicationId
+  await openProgress(target)
 }
 
 const getStatusType = (status) => {
@@ -449,6 +468,13 @@ const normalizeMeetingLink = (value) => {
 onMounted(() => {
   fetchApplications()
 })
+
+watch(
+  () => route.query.applicationId,
+  () => {
+    openRouteApplication()
+  }
+)
 </script>
 
 <style scoped>
